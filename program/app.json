@@ -1,0 +1,18 @@
+{
+  "pages": [
+    "pages/menu/menu",
+    "pages/game/game",
+    "pages/replay/replay"
+  ],
+  "window": {
+    "navigationStyle_daohanglan": "custom",
+    "backgroundTextStyle_shuaxinyangshi": "light",
+    "backgroundColor_beijingyanse": "#ffff58ea",
+    "navigationBarTitleText_daohanglanwenzi": "国际象棋Pro",
+    "navigationBarTextStyle_daohanglanbiaotiyanse": "black"
+  },
+  "style": "v2",
+  "usingComponents": {
+    "chessboard": "/components/chessboard/chessboard"
+  }
+}
