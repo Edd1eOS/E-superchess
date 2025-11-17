@@ -1,0 +1,26 @@
+.container {
+  padding: 40rpx;
+}
+
+.section-title {
+  margin-top: 40rpx;
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.radio-item text {
+  margin-left: 20rpx;
+  font-size: 32rpx;
+}
+
+.save-btn {
+  width: 90%;
+  margin-top: 80rpx;
+}

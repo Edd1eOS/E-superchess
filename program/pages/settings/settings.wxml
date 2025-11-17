@@ -1,0 +1,30 @@
+<view class="container">
+
+  <text class="section-title">棋子外观 Piece Style</text>
+  <radio-group bindchange="onPieceStyleChange">
+    <label wx:for="{{pieceStyles}}" wx:key="value" class="radio-item">
+      <radio value="{{item.value}}" checked="{{item.value === pieceStyle}}"></radio>
+      <text>{{item.label}}</text>
+    </label>
+  </radio-group>
+
+  <text class="section-title">棋盘外观 Board Theme</text>
+  <radio-group bindchange="onBoardStyleChange">
+    <label wx:for="{{boardStyles}}" wx:key="value" class="radio-item">
+      <radio value="{{item.value}}" checked="{{item.value === boardStyle}}"></radio>
+      <text>{{item.label}}</text>
+    </label>
+  </radio-group>
+
+  <text class="section-title">音效大小 Sound Volume</text>
+  <slider
+    min="0"
+    max="100"
+    step="1"
+    value="{{volume}}"
+    bindchange="onVolumeChange"
+  />
+
+  <button class="save-btn" bindtap="saveSettings">保存设置 Save</button>
+
+</view>
