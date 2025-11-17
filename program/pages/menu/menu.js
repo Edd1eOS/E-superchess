@@ -2,13 +2,13 @@ Page({
 
   goPVP() {
     wx.navigateTo({
-      url: '/pages/game/game?mode=pvp'
+      url: '/pages/chess/chess?mode=pvp'
     })
   },
 
   goPVE() {
     wx.navigateTo({
-      url: '/pages/game/game?mode=pve'
+      url: '/pages/chess/chess?mode=pve'
     })
   },
 

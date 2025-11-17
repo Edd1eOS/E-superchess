@@ -11,15 +11,15 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "useCompilerPlugins": false
+    "useCompilerPlugins": false,
+    "minifyWXML": true
   },
-  "compileType": "game",
+  "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},
   "packOptions": {
     "ignore": [],
     "include": []
   },
-  "isGameTourist": false,
-  "appid": "wx51fc87ae541cff34",
+  "appid": "wx0a96e22dd1feefc9",
   "editorSetting": {}
 }
