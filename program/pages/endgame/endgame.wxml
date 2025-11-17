@@ -1,0 +1,12 @@
+<view class="container">
+
+  <text class="title">{{ resultText }}</text>
+  <text class="score">{{ scoreText }}</text>
+  <text wx:if="{{reasonText}}" class="subtitle">{{ reasonText }}</text>
+
+  <view class="buttons">
+    <button bindtap="goReplay">Replay Game</button>
+    <button bindtap="goMenu">Back to Menu</button>
+  </view>
+
+</view>
