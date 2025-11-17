@@ -1,0 +1,34 @@
+<view class="container">
+
+  <!-- 棋盘 -->
+  <view class="board-container">
+    <canvas 
+      type="2d"
+      canvas-id="chessboard"
+      id="chessboard"
+      style="width: 700rpx; height: 700rpx;"
+    ></canvas>
+  </view>
+
+  <!-- 进度条 -->
+  <view class="slider-container">
+    <slider 
+      min="0" 
+      max="{{maxStep}}" 
+      step="1" 
+      value="{{currentStep}}" 
+      bindchanging="onSliderChanging" 
+      bindchange="onSliderChange"
+    />
+    <view class="step-text">{{currentStep}} / {{maxStep}}</view>
+  </view>
+
+  <!-- 控制按钮 -->
+  <view class="controls">
+    <button size="mini" bindtap="toStart">开局</button>
+    <button size="mini" bindtap="stepBack">上一步</button>
+    <button size="mini" bindtap="stepForward">下一步</button>
+    <button size="mini" bindtap="toEnd">终局</button>
+  </view>
+
+</view>
