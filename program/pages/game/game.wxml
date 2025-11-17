@@ -1,0 +1,16 @@
+<view class="game-container">
+
+  <!-- 棋盘渲染区（占位） -->
+  <view class="board">
+    <!-- your board here -->
+  </view>
+
+  <!-- 操作区 -->
+  <view class="op-panel">
+    <button bindtap="onUndo">Undo</button>
+    <button bindtap="onOfferDraw">Offer Draw</button>
+    <button bindtap="onSurrender">Surrender</button>
+    <button bindtap="backToMenu">Back to Menu</button>
+  </view>
+
+</view>
