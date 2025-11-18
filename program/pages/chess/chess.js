@@ -99,7 +99,7 @@ Page({
    * ----------------------------------------- */
   backToMenu() {
     wx.reLaunch({
-      url: '/pages/menu/menu'
+      url: 'program/pages/menu/menu'
     });
   }
 
