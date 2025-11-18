@@ -1,0 +1,27 @@
+.piece {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  font-size: 28rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+}
+
+.white {
+  background-color: #fff;
+  color: #000;
+  border: 2rpx solid #333;
+}
+
+.black {
+  background-color: #222;
+  color: #fff;
+  border: 2rpx solid #eee;
+}
+
+.selected {
+  border: 4rpx solid #ffcc00;
+  box-shadow: 0 0 10rpx #ffcc00;
+}
