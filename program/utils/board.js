@@ -42,4 +42,80 @@ function getBoard(){
 }
 
 
+function movePiece(from, to) {
+    // 保存当前棋盘状态到历史记录
+    history.push({
+        from: from,
+        to: to,
+        board: [...board], // 保存棋盘副本
+        state: {...state}  // 保存状态副本
+    });
 
+    // 查找哪个棋子位于from位置
+    let piece = null;
+    let pieceType = null;
+    
+    for (const [type, positions] of Object.entries(state)) {
+        const index = positions.indexOf(from);
+        if (index !== -1) {
+            pieceType = type;
+            piece = positions[index];
+            positions.splice(index, 1); // 从原位置移除
+            break;
+        }
+    }
+
+    if (!piece) {
+        console.log("无棋子可移动");
+        return false;
+    }
+
+    // 检查目标位置是否有敌方棋子(需要先找到敌方棋子)
+    for (const [type, positions] of Object.entries(state)) {
+        const targetIndex = positions.indexOf(to);
+        if (targetIndex !== -1) {
+            // 移除被吃掉的棋子
+            positions.splice(targetIndex, 1);
+            break;
+        }
+    }
+
+    // 将棋子添加到新位置
+    if (!state[pieceType]) {
+        state[pieceType] = [];
+    }
+    state[pieceType].push(to);
+    
+    return true;
+}
+
+function undo(){
+    if (history.length === 0) {
+        console.log("没有可撤销的步骤");
+        return;
+    }
+
+    const lastMove = history.pop();
+    board = lastMove.board;
+    state = lastMove.state;
+}
+
+function isCheck(color){
+    getBoard("K")//K的位置
+    return getLegalMoves(getBoard("K"),state).some(move => move.includes("K"))//本位置是否合法
+
+}
+
+function isCheckmate(color){
+    getBoard("K")
+    return getLegalMoves(getBoard("K"),state).every(move => move.includes("K"))
+}
+
+MediaSourceHandle.exports = {
+    initBoard,
+    getBoard,
+    movePiece,
+    undo,
+    isCheck,
+    isCheckmate
+}//类似头文件写法
