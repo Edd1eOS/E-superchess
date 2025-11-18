@@ -1,0 +1,8 @@
+<view class="board">
+    <block wx:for="{{grid}}" wx:key="*this">
+        <view class="cell" data-x="{{item.x}}" data-y="{{item.y}}" bindtap="onCellTap">
+            <piece piece="{{item.piece}}">
+            </piece>
+        </view>
+    </block>
+</view>

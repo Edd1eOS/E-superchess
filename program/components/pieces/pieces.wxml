@@ -1,0 +1,6 @@
+<view
+  class="piece {{color}} {{selected ? 'selected' : ''}}"
+  bindtap="onTap"
+>
+  {{type}}
+</view>
