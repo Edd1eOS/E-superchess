@@ -1,4 +1,7 @@
 {
     "navigationBarTitleText": "Game",
-    "usingComponents": {}
+    "usingComponents": {
+        "chessboard": "/program/components/chessboard/chessboard",
+        "piece": "/program/components/pieces/pieces"
+    }
 }

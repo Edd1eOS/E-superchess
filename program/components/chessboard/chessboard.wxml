@@ -1,8 +1,15 @@
-<view class="board">
-    <block wx:for="{{grid}}" wx:key="*this">
-        <view class="cell" data-x="{{item.x}}" data-y="{{item.y}}" bindtap="onCellTap">
-            <piece piece="{{item.piece}}">
-            </piece>
+<!-- 棋盘组件 -->
+<view class="chessboard">
+  <block wx:for="{{grid}}" wx:for-index="y" wx:key="y">
+    <view class="row">
+      <block wx:for="{{item}}" wx:for-index="x" wx:key="x">
+        <view class="cell {{item.isDark ? 'dark' : ''}} {{item.piece ? 'occupied' : ''}}" 
+              data-x="{{item.x}}" 
+              data-y="{{item.y}}" 
+              bindtap="onCellTap">
+          <piece wx:if="{{item.piece}}" piece="{{item.piece}}"></piece>
         </view>
-    </block>
+      </block>
+    </view>
+  </block>
 </view>
