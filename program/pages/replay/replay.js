@@ -1,5 +1,5 @@
 const app = getApp();
-import Chess from '../../utils/chess.js';  // 你自建的棋类核心逻辑
+import Chess from '../../utils/board.js';  // 棋类核心逻辑
 
 Page({
 
