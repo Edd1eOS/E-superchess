@@ -1,8 +1,8 @@
 <view class="game-container">
 
-  <!-- 棋盘渲染区（占位） -->
+  <!-- 棋盘渲染区 -->
   <view class="board">
-    <!-- your board here -->
+    <chessboard boardState="{{boardState}}" bind:celltap="onCellTap"></chessboard>
   </view>
 
   <!-- 操作区 -->

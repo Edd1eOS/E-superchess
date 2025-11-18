@@ -3,6 +3,7 @@
   flex-direction: column;
   align-items: center;
   padding: 40rpx;
+  min-height: 100vh; /* 确保容器至少占据整个视口高度 */
 }
 
 .back-btn {
@@ -10,17 +11,27 @@
   margin-bottom: 20rpx;
 }
 
-.board-placeholder {
-  width: 600rpx;
-  height: 600rpx;
-  border: 2px solid #333;
+/* 棋盘容器样式调整，使其垂直居中并有一定下移 */
+.board {
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  width: 100%;
+  flex-grow: 1; /* 占据可用空间 */
+  margin-top: 100rpx; /* 向下移动棋盘 */
   margin-bottom: 40rpx;
 }
 
 .controls button {
   width: 300rpx;
   margin: 20rpx 0;
+}
+
+/* 添加一些额外的空间给操作按钮 */
+.op-panel {
+  margin-top: 40rpx;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
