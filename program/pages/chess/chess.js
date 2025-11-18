@@ -1,6 +1,6 @@
-const Board = require('../../engine/board.js');
-const Rules = require('../../engine/rules.js');
-const Recorder = require('../../engine/recorder.js');
+const Board = require('../../utils/board.js');
+const Rules = require('../../utils/rules.js');
+const Recorder = require('../../utils/recorder.js');
 
 Page({
 
