@@ -1,3 +1,6 @@
+const app = getApp();
+const Recorder = require('../../utils/recorder.js');
+
 Page({
   data: {
     resultText: "Game Over",
@@ -34,8 +37,13 @@ Page({
 
   // 跳转到复盘页面（复盘会从 recorder 中加载最近一局）
   goReplay() {
+    // 创建一个默认的游戏记录数据
+    const replayData = {
+      moves: []
+    };
+    
     wx.navigateTo({
-      url: '/pages/replay/replay'
+      url: `/pages/replay/replay?data=${encodeURIComponent(JSON.stringify(replayData))}`
     });
   },
 
