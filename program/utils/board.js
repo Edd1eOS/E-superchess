@@ -35,7 +35,7 @@ class Board {
 
     // 兵（白方）
     const SP = ["a3","b3","i3","j3"];
-    const IP = ["c3","d3","e3","f3","g3","h3"];
+    const P = ["c3","d3","e3","f3","g3","h3"];
     const LG = ["a2","j2"];
     const N  = ["b2","i2"];
     const B  = ["c2","h2"];
@@ -51,7 +51,7 @@ class Board {
 
     // 放置白方棋子
     this.placeGroup(SP,  "SP", "W");
-    this.placeGroup(IP,  "IP", "W");
+    this.placeGroup(P,   "P",  "W");
     this.placeGroup(LG,  "LG", "W");
     this.placeGroup(N,   "N",  "W");
     this.placeGroup(B,   "B",  "W");
