@@ -30,5 +30,7 @@
     <button size="mini" bindtap="stepForward">下一步</button>
     <button size="mini" bindtap="toEnd">终局</button>
   </view>
-
+  <view class="controls">
+    <button size="mini" bindtap="back">返回</button>
+  </view>
 </view>
