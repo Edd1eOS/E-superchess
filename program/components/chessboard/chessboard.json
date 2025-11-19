@@ -1,3 +1,6 @@
 {
-    "conponents": true
+  "component": true,
+  "usingComponents": {
+    "piece": "/program/components/pieces/pieces"
+  }
 }

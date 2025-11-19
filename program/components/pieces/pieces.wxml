@@ -2,5 +2,10 @@
   class="piece {{color}} {{selected ? 'selected' : ''}}"
   bindtap="onTap"
 >
-  {{type}}
+  <image 
+    wx:if="{{type}}" 
+    class="piece-icon" 
+    src="/program/assets(sucaiku)/pieces_icon/{{type}}.png" 
+    mode="aspectFit"
+  />
 </view>

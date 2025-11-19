@@ -6,7 +6,10 @@
             <view class="cell {{item.isDark ? 'dark' : ''}} {{item.piece ? 'occupied' : ''}}" 
               data-coord="{{item.coord}}"
               bindtap="onCellTap">
-          <piece wx:if="{{item.piece}}" piece="{{item.piece}}"></piece>
+          <piece wx:if="{{item.piece}}" 
+                 type="{{item.piece.type}}" 
+                 color="{{item.piece.color}}">
+          </piece>
         </view>
       </block>
     </view>
