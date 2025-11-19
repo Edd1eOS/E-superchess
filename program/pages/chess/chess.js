@@ -32,9 +32,9 @@ Page({
    * 棋盘点击事件处理
    * ----------------------------------------- */
   onCellTap(e) {
-    const { x, y } = e.detail;
-    console.log('Cell tapped:', x, y);
-    // 在这里添加处理点击事件的逻辑
+    const { coord } = e.detail || {};
+    console.log('Cell tapped:', coord);
+    // 在这里把 coord 传给棋盘逻辑：例如 this.board.handleClickByCoord(coord)
   },
 
   /* -----------------------------------------
