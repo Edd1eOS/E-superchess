@@ -84,6 +84,7 @@ Page({
    * - 跳转 endgame
    * ----------------------------------------- */
   onSurrender() {
+
     const loser = this.board.turn;
     const winner = loser === "white" ? "black" : "white";
 
@@ -108,7 +109,7 @@ Page({
    * ----------------------------------------- */
   backToMenu() {
     wx.reLaunch({
-      url: 'program/pages/menu/menu'
+      url: '/program/pages/menu/menu'
     });
   }
 

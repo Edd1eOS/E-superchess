@@ -117,6 +117,11 @@ Page({
     this.renderPosition(this.data.maxStep);
   },
 
+  // 返回按钮功能
+  back() {
+    wx.navigateBack();
+  },
+
   /* ---------------------------------
    * 进度条逻辑
    * --------------------------------- */
@@ -128,6 +133,7 @@ Page({
   onSliderChange(e) {
     this.setData({ currentStep: e.detail.value });
     this.renderPosition(e.detail.value);
-  }
+  },
+
 
 });
