@@ -2,12 +2,7 @@
 
   <!-- 棋盘 -->
   <view class="board-container">
-    <canvas 
-      type="2d"
-      canvas-id="chessboard"
-      id="chessboard"
-      style="width: 700rpx; height: 700rpx;"
-    ></canvas>
+    <chessboard boardState="{{boardState}}" bind:celltap="onCellTap"></chessboard>
   </view>
 
   <!-- 进度条 -->
