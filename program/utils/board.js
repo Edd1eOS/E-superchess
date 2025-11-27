@@ -34,14 +34,14 @@ class Board {
     };
 
     // 兵（白方）
-    const SP = ["a3","b3","i3","j3"];
-    const P = ["c3","d3","e3","f3","g3","h3"];
-    const LG = ["a2","j2"];
-    const N  = ["b2","i2"];
-    const B  = ["c2","h2"];
-    const A  = ["d2","g2"];
+    const SP_W = ["a3","b3","i3","j3"];
+    const P_W = ["c3","d3","e3","f3","g3","h3"];
+    const LG_W = ["a2","j2"];
+    const N_W = ["b2","i2"];
+    const B_W = ["c2","h2"];
+    const A_W = ["d2","g2"];
 
-    const backRank = {
+    const backRank_W = {
       R: ["a1","j1"],
       M: ["d1"],
       Q: ["e1"],
@@ -50,18 +50,49 @@ class Board {
     };
 
     // 放置白方棋子
-    this.placeGroup(SP,  "SP", "W");
-    this.placeGroup(P,   "P",  "W");
-    this.placeGroup(LG,  "LG", "W");
-    this.placeGroup(N,   "N",  "W");
-    this.placeGroup(B,   "B",  "W");
-    this.placeGroup(A,   "A",  "W");
+    this.placeGroup(SP_W,  "SP", "W");
+    this.placeGroup(P_W,   "P",  "W");
+    this.placeGroup(LG_W,  "LG", "W");
+    this.placeGroup(N_W,   "N",  "W");
+    this.placeGroup(B_W,   "B",  "W");
+    this.placeGroup(A_W,   "A",  "W");
 
-    for (const [type, posArr] of Object.entries(backRank)) {
+    for (const [type, posArr] of Object.entries(backRank_W)) {
       this.placeGroup(posArr, type, "W");
     }
 
-    // TODO：放置黑方（上下翻转 10-x）
+    // 放置黑方棋子（对称于白方）
+    const transformCoord = (coord) => {
+      const file = coord[0];
+      const rank = parseInt(coord.slice(1));
+      const mirroredRank = 11 - rank;
+      return `${file}${mirroredRank}`;
+    };
+    
+    // 黑方兵
+    const SP_B = SP_W.map(transformCoord);
+    const P_B = P_W.map(transformCoord);
+    const LG_B = LG_W.map(transformCoord);
+    const N_B = N_W.map(transformCoord);
+    const B_B = B_W.map(transformCoord);
+    const A_B = A_W.map(transformCoord);
+    
+    const backRank_B = {};
+    for (const [type, posArr] of Object.entries(backRank_W)) {
+      backRank_B[type] = posArr.map(transformCoord);
+    }
+
+    // 放置黑方棋子
+    this.placeGroup(SP_B,  "SP", "B");
+    this.placeGroup(P_B,   "P",  "B");
+    this.placeGroup(LG_B,  "LG", "B");
+    this.placeGroup(N_B,   "N",  "B");
+    this.placeGroup(B_B,   "B",  "B");
+    this.placeGroup(A_B,   "A",  "B");
+
+    for (const [type, posArr] of Object.entries(backRank_B)) {
+      this.placeGroup(posArr, type, "B");
+    }
   }
 
   // 坐标 "e4" 转为行列
