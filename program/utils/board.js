@@ -148,25 +148,25 @@ class Board {
       const lastMoveFromRC = this.toRC(lastMove.from);
       const lastMoveToRC = this.toRC(lastMove.to);
       
-      // 判断是否为过路兵吃子：
-      // 1. 斜向移动一格
+      // 判断是否为合法过路兵（预留方案）：
+      // 1. 斜前绕后一格
       // 2. 目标位置为空格
       // 3. 上一步有敌方兵移动两格且在同一行且邻近列
-      if (Math.abs(tr - fr) === 1 && 
+      // 4. 3提到兵不为当前持方棋子
+      if (Math.abs(tr - fr) === 1 && //con1
           Math.abs(tc - fc) === 1 && 
           !this.board[tr][tc] &&
-          lastMovedPiece && 
+          lastMovedPiece && //con3
           lastMovedPiece.type === 'P' && 
-          lastMovedPiece.color !== piece.color &&
+          lastMovedPiece.color !== piece.color &&//con4
           Math.abs(lastMoveToRC.r - lastMoveFromRC.r) === 2 &&
           lastMoveToRC.r === fr &&
           Math.abs(lastMoveToRC.c - fc) === 1) {
         enPassantCapture = true;
-        enPassantCapturedPos = lastMove.to; // 被吃掉的兵的位置
+        enPassantCapturedPos = lastMove.to; 
       }
     }
 
-    // 执行移动
     this.board[fr][fc] = null; 
     this.board[tr][tc] = piece;
     
