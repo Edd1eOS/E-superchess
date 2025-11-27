@@ -194,10 +194,10 @@ class Rules {
       return false;
     } else if (type === 'SP') {
       // SP在特定行时获得斜线行走能力（不能斜线吃子，即仍要检查目标格是否被占据）
-      // 白方：6、7行（r=3、2）；黑方：3、4行（r=4、5）
+      // 白方：5、6行（r=3、4）；黑方：3、4行（r=5、6）(加大作用，否则难以触发)
       if (Math.abs(dc) === 1 && dr === dir) {
-        const isOnCorrectRank = (isWhite && (fromRC.r === 3 || fromRC.r === 2)) || 
-                               (!isWhite && (fromRC.r === 4 || fromRC.r === 5));
+        const isOnCorrectRank = (isWhite && (fromRC.r === 3 || fromRC.r === 4)) || 
+                               (!isWhite && (fromRC.r === 5 || fromRC.r === 6));
         
         if (isOnCorrectRank) {
           // 目标格不能被占据（不能斜线吃子）
