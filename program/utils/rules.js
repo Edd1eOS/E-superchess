@@ -114,19 +114,33 @@ class Rules {
 
     // 直走：列不变
     if (dc === 0) {
-      // 向前一格，目标必须为空
+      // 向前一格，对于P目标必须为空，但对于SP目标可以不为空
       if (dr === dir) {
-        return !board.board[toRC.r][toRC.c];
+        if (type === 'P') {
+          // P兵直走时目标必须为空
+          return !board.board[toRC.r][toRC.c];
+        } else if (type === 'SP') {
+          // SP长矛兵直走时目标可以不为空
+          return true;
+        }
       }
 
-      // 向前两格：仅在初始行允许，且中间格与目标格都为空
+      // 向前两格：仅在初始行允许。对于P，中间格与目标格都为空；对于SP，中间格为空即可
       if (dr === 2 * dir) {
         // 白方在第3行(r=7)，黑方在第8行(r=2)
         const isOnStartingRank = (isWhite && fromRC.r === 7) || (!isWhite && fromRC.r === 2);
         if (isOnStartingRank) {
           const midR = fromRC.r + dir;
-          if (!board.board[midR][fromRC.c] && !board.board[toRC.r][toRC.c]) {
-            return true;
+          // 对于P兵，中间格和目标格都必须为空
+          // 对于SP长矛兵，只需要中间格为空（目标格可以不为空）
+          if (!board.board[midR][fromRC.c]) {
+            if (type === 'P') {
+              // P兵需要目标格也为空
+              return !board.board[toRC.r][toRC.c];
+            } else if (type === 'SP') {
+              // SP长矛兵不需要检查目标格是否为空
+              return true;
+            }
           }
         }
         return false;
@@ -135,7 +149,7 @@ class Rules {
       return false;
     }
 
-    // Pawn和Spearman有不同的斜向移动规则
+    // 特殊化处理
     if (type === 'P') {
       // Pawn的斜向吃子：列差为1且向前一格，且目标有敌方棋子
       if (Math.abs(dc) === 1 && dr === dir) {
@@ -164,8 +178,10 @@ class Rules {
 
         return false;
       }
+      // 添加一个明确的返回值，确保所有路径都有返回
+      return false;
     } else if (type === 'SP') {
-      // Spearman的"突围"走法：当在对方半场，有敌方P或SP走到SP旁边时，
+      // SP突围：当在对方半场，有敌方P或SP走到SP旁边时，
       // 如对方P或SP身后格不被占据，SP可以立刻斜向此格吃子
       if (Math.abs(dc) === 1 && dr === dir) {
         const targetPiece = board.board[toRC.r][toRC.c];
