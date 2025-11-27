@@ -3,12 +3,13 @@
   <block wx:for="{{grid}}" wx:for-index="y" wx:key="y">
     <view class="row">
       <block wx:for="{{item}}" wx:for-index="x" wx:key="x">
-            <view class="cell {{item.isDark ? 'dark' : ''}} {{item.piece ? 'occupied' : ''}}" 
+        <view class="cell {{item.isDark ? 'dark' : ''}} {{item.isSelected ? 'selected' : ''}} {{item.isTarget ? 'target' : ''}} {{item.isValidMove ? 'valid-move' : ''}}" 
               data-coord="{{item.coord}}"
               bindtap="onCellTap">
           <piece wx:if="{{item.piece}}" 
                  type="{{item.piece.type}}" 
-                 color="{{item.piece.color}}">
+                 color="{{item.piece.color}}"
+                 selected="{{item.isSelected}}">
           </piece>
         </view>
       </block>
