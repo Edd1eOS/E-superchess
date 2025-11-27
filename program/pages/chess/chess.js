@@ -5,8 +5,8 @@ const Recorder = require('../../utils/recorder.js');
 Page({
 
   data: {
-    boardState: null,       // 用于界面渲染
-    turn: 'W',              // 当前行棋方
+    boardState: [],       // 用于界面渲染，修改初始值为数组而不是null
+    turn: 'W',              // 当前回合
     drawOfferedBy: null     // null / "W" / "B"
   },
 
@@ -42,7 +42,7 @@ Page({
   onMove(e) {
     const { from, to } = e.detail;
     console.log(`Moving from ${from} to ${to}`);
-    
+
     // 检查移动是否合法
     if (!this.rules.isValidMove(this.board, from, to, this.board.state.turn)) {
       wx.showToast({
@@ -51,7 +51,7 @@ Page({
       });
       return;
     }
-    
+
     // 创建移动前的状态快照用于悔棋和复盘
     const snapshot = {
       from: from,
@@ -63,7 +63,7 @@ Page({
 
     // 执行移动
     this.board.movePiece(from, to);
-    
+
     // 记录操作快照
     this.recorder.recordMove(snapshot);
 
@@ -105,52 +105,29 @@ Page({
     // 如果对方之前已提出并且当前玩家接受求和
     if (this.data.drawOfferedBy && this.data.drawOfferedBy !== player) {
       // 达成和棋
-      this.endGame("0.5-0.5", "agreement");
+      wx.redirectTo({
+        url: '../endgame/endgame?result=draw'
+      });
       return;
     }
 
-    // 否则提出新的求和请求
+    // 当前玩家提出求和
     this.setData({ drawOfferedBy: player });
 
     wx.showToast({
-      title: `${player} offers draw`,
-      icon: "none"
+      title: `${player==='W'?'白方':'黑方'}求和`,
+      icon: 'none'
     });
   },
 
   /* -----------------------------------------
-   * 认输（SURRENDER）
-   * - 立即结束对局
-   * - 跳转 endgame
+   * 认输（RESIGN）
+   * - 单方面决定，立即跳转 endgame
    * ----------------------------------------- */
-  onSurrender() {
-
-    const loser = this.board.state.turn;
-    const winner = loser === "W" ? "B" : "W";
-
-    const result = winner === "W" ? "1-0" : "0-1";
-
-    this.endGame(result, "resign");
-  },
-
-  /* -----------------------------------------
-   * 对局结算（唯一出口）
-   * result: "1-0" / "0-1" / "0.5-0.5"
-   * reason: "checkmate" / "resign" / "agreement" / "timeout"
-   * ----------------------------------------- */
-  endGame(result, reason) {
-    wx.navigateTo({
-      url: `/pages/endgame/endgame?result=${encodeURIComponent(result)}&reason=${encodeURIComponent(reason)}`
-    });
-  },
-
-  /* -----------------------------------------
-   * 返回主菜单
-   * ----------------------------------------- */
-  backToMenu() {
-    wx.reLaunch({
-      url: '/program/pages/menu/menu'
+  onResign() {
+    const winner = this.board.state.turn === 'W' ? 'B' : 'W';
+    wx.redirectTo({
+      url: '../endgame/endgame?result=win&winner=' + winner
     });
   }
-
 });
