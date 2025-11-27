@@ -175,12 +175,14 @@ class Rules {
             const lastMoveDR = Math.abs(this.toRC(lastMove.to).r - this.toRC(lastMove.from).r);
             
             // 检查上一步是否是敌方的P或SP走了两格，且与当前兵在同一行且邻近列
+            // 修改条件：目标列必须与敌方刚移动的棋子所在列相同
             if (lastMovedPiece && 
                 lastMovedPiece.color !== piece.color && 
                 (lastMovedPiece.type === 'P' || lastMovedPiece.type === 'SP') &&
                 lastMoveDR === 2 &&
                 this.toRC(lastMove.to).r === fromRC.r &&
-                Math.abs(this.toRC(lastMove.to).c - fromRC.c) === 1) {
+                Math.abs(this.toRC(lastMove.to).c - fromRC.c) === 1 &&
+                toRC.c === this.toRC(lastMove.to).c) {  // 添加这一行：确保目标列与敌方棋子所在列相同
               return true;
             }
           }
