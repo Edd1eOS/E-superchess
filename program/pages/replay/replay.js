@@ -7,7 +7,8 @@ Page({
     currentStep: 0,   // 当前步数
     maxStep: 0,       // 总步数
     moves: [],        // 对局的招法列表
-    boardState: null, // 棋盘状态
+
+    boardState: [], // 棋盘状态，修改初始值为数组而不是null
   },
 
   onLoad(options) {
