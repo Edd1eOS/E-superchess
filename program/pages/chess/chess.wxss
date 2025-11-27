@@ -37,18 +37,19 @@
 }
 
 /* 合法移动目标位置的可视化样式 */
-.valid-move-target {
-  position: relative;
-}
-
-.valid-move-target::after {
+.cell.target::before {
   content: "";
   position: absolute;
-  width: 20rpx;
-  height: 20rpx;
-  background-color: rgba(0, 128, 0, 0.5);
+  width: 24rpx;
+  height: 24rpx;
+  background-color: rgba(0, 128, 0, 0.6);
   border-radius: 50%;
+  z-index: 1;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+.cell.target {
+  position: relative;
 }
