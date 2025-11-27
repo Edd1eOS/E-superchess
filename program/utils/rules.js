@@ -15,8 +15,8 @@ class Rules {
     // 如果起点或终点无效
     if (!from || !to) return false;
 
-    const fromRC = board.toRC(from);
-    const toRC = board.toRC(to);
+    const fromRC = this.toRC(from);
+    const toRC = this.toRC(to);
 
     // 获取起点棋子
     const piece = board.board[fromRC.r][fromRC.c];
@@ -72,8 +72,8 @@ class Rules {
    * 检查兵(Pawn)的移动是否合法
    */
   isValidPawnMove(board, from, to, piece) {
-    const fromRC = board.toRC(from);
-    const toRC = board.toRC(to);
+    const fromRC = this.toRC(from);
+    const toRC = this.toRC(to);
     const dr = toRC.r - fromRC.r;
     const dc = toRC.c - fromRC.c;
     
@@ -113,8 +113,8 @@ class Rules {
    * 检查长矛兵(Spearman)的移动是否合法
    */
   isValidSpearmanMove(board, from, to, piece) {
-    const fromRC = board.toRC(from);
-    const toRC = board.toRC(to);
+    const fromRC = this.toRC(from);
+    const toRC = this.toRC(to);
     const dr = toRC.r - fromRC.r;
     const dc = toRC.c - fromRC.c;
     
@@ -153,8 +153,8 @@ class Rules {
    * 检查象(Bishop)的移动是否合法
    */
   isValidBishopMove(board, from, to) {
-    const fromRC = board.toRC(from);
-    const toRC = board.toRC(to);
+    const fromRC = this.toRC(from);
+    const toRC = this.toRC(to);
     const dr = toRC.r - fromRC.r;
     const dc = toRC.c - fromRC.c;
     
@@ -171,8 +171,8 @@ class Rules {
    * 检查车(Rook)的移动是否合法
    */
   isValidRookMove(board, from, to) {
-    const fromRC = board.toRC(from);
-    const toRC = board.toRC(to);
+    const fromRC = this.toRC(from);
+    const toRC = this.toRC(to);
     const dr = toRC.r - fromRC.r;
     const dc = toRC.c - fromRC.c;
     
@@ -236,7 +236,7 @@ class Rules {
   }
 
   /**
-   * 检查弩兵(Lineguard)的移动是否合法
+   * 检查线卫(Lineguard)的移动是否合法
    */
   isValidLineguardMove(from, to) {
     const fromRC = this.toRC(from);
@@ -252,8 +252,8 @@ class Rules {
    * 检查路径是否畅通（用于象、车、后）
    */
   isPathClear(board, from, to) {
-    const fromRC = board.toRC(from);
-    const toRC = board.toRC(to);
+    const fromRC = this.toRC(from);
+    const toRC = this.toRC(to);
     const dr = toRC.r - fromRC.r;
     const dc = toRC.c - fromRC.c;
     

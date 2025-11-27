@@ -6,8 +6,8 @@ Page({
 
   data: {
     boardState: null,       // 用于界面渲染
-    turn: 'white',          // 当前行棋方
-    drawOfferedBy: null     // null / "white" / "black"
+    turn: 'W',              // 当前行棋方
+    drawOfferedBy: null     // null / "W" / "B"
   },
 
   onLoad(options) {
@@ -100,7 +100,7 @@ Page({
    * - 只有达成时才跳转 endgame
    * ----------------------------------------- */
   onOfferDraw() {
-    const player = this.board.turn;
+    const player = this.board.state.turn;
 
     // 如果对方之前已提出并且当前玩家接受求和
     if (this.data.drawOfferedBy && this.data.drawOfferedBy !== player) {
@@ -125,10 +125,10 @@ Page({
    * ----------------------------------------- */
   onSurrender() {
 
-    const loser = this.board.turn;
-    const winner = loser === "white" ? "black" : "white";
+    const loser = this.board.state.turn;
+    const winner = loser === "W" ? "B" : "W";
 
-    const result = winner === "white" ? "1-0" : "0-1";
+    const result = winner === "W" ? "1-0" : "0-1";
 
     this.endGame(result, "resign");
   },

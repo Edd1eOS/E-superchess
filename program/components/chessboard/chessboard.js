@@ -86,7 +86,7 @@ Component({
       
       // 只有当格子上有棋子时才能选中
       if (piece) {
-        // 计算可能的移动位置（暂时不检查合法性）
+        // 计算可能的移动位置（使用规则引擎检查合法性）
         const targets = this.calculatePossibleMoves(coord);
         
         this.setData({
