@@ -138,9 +138,43 @@ class Board {
       state: JSON.parse(JSON.stringify(this.state))
     });
 
+    // 检查是否为过路兵吃子操作
+    let enPassantCapture = false;
+    let enPassantCapturedPos = null;
+    
+    if (piece.type === 'P' && this.state.lastMove) {
+      const lastMove = this.state.lastMove;
+      const lastMovedPiece = lastMove.piece;
+      const lastMoveFromRC = this.toRC(lastMove.from);
+      const lastMoveToRC = this.toRC(lastMove.to);
+      
+      // 判断是否为过路兵吃子：
+      // 1. 斜向移动一格
+      // 2. 目标位置为空格
+      // 3. 上一步有敌方兵移动两格且在同一行且邻近列
+      if (Math.abs(tr - fr) === 1 && 
+          Math.abs(tc - fc) === 1 && 
+          !this.board[tr][tc] &&
+          lastMovedPiece && 
+          lastMovedPiece.type === 'P' && 
+          lastMovedPiece.color !== piece.color &&
+          Math.abs(lastMoveToRC.r - lastMoveFromRC.r) === 2 &&
+          lastMoveToRC.r === fr &&
+          Math.abs(lastMoveToRC.c - fc) === 1) {
+        enPassantCapture = true;
+        enPassantCapturedPos = lastMove.to; // 被吃掉的兵的位置
+      }
+    }
+
     // 执行移动
     this.board[fr][fc] = null; 
     this.board[tr][tc] = piece;
+    
+    // 如果是过路兵吃子，移除被吃的敌方兵
+    if (enPassantCapture && enPassantCapturedPos) {
+      const capturedRC = this.toRC(enPassantCapturedPos);
+      this.board[capturedRC.r][capturedRC.c] = null;
+    }
 
     // 记录上一步移动，用于过路兵等规则判断
     this.state.lastMove = {
