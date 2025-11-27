@@ -142,6 +142,13 @@ class Board {
     this.board[fr][fc] = null; 
     this.board[tr][tc] = piece;
 
+    // 记录上一步移动，用于过路兵等规则判断
+    this.state.lastMove = {
+      from: from,
+      to: to,
+      piece: { ...piece }
+    };
+
     // 更新王位置
     if (piece.type === "K") {
       this.state.kingPos[piece.color] = to;

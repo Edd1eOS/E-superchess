@@ -159,18 +159,28 @@ class Rules {
         }
 
         // 过路兵 (en passant) 判定：
-        // 需要 board.state.lastMove 存在且为对方兵的两格推进，且该兵刚好停在与目标列相同且与起点同行的格子上
+        // 1. 执行兵必须在正确的行：白方第6行(r=4)，黑方第5行(r=5)
+        // 2. 上一步行动的敌方棋子必须是邻近两列的P或SP
+        // 3. 敌方棋子必须与我方兵相同行
         const state = board.state || {};
         const lastMove = state.lastMove;
-        if (lastMove && lastMove.piece && lastMove.piece.type === 'P' && lastMove.piece.color !== piece.color) {
-          // lastMove.from/lastMove.to 期望为字符串坐标
-          const lastFromRC = this.toRC(lastMove.from);
-          const lastToRC = this.toRC(lastMove.to);
-          // 对方兵是否做了两格推进
-          if (Math.abs(lastToRC.r - lastFromRC.r) === 2) {
-            // 对方兵当前行应与起点行相同，且列与目标列相同（即可被过路兵吃掉）
-            if (lastToRC.r === fromRC.r && lastToRC.c === toRC.c) {
-              // 注意：实际执行过路兵时，调用方需移除被吃掉的兵（lastToRC）
+        
+        // 检查基本条件
+        if (lastMove && Math.abs(dc) === 1 && dr === dir) {
+          // 修正：白方第6行(r=4)，黑方第5行(r=5)
+          const isCorrectRow = (isWhite && fromRC.r === 4) || (!isWhite && fromRC.r === 5);
+          
+          if (isCorrectRow) {
+            const lastMovedPiece = this.parsePiece(lastMove.piece);
+            const lastMoveDR = Math.abs(this.toRC(lastMove.to).r - this.toRC(lastMove.from).r);
+            
+            // 检查上一步是否是敌方的P或SP走了两格，且与当前兵在同一行且邻近列
+            if (lastMovedPiece && 
+                lastMovedPiece.color !== piece.color && 
+                (lastMovedPiece.type === 'P' || lastMovedPiece.type === 'SP') &&
+                lastMoveDR === 2 &&
+                this.toRC(lastMove.to).r === fromRC.r &&
+                Math.abs(this.toRC(lastMove.to).c - fromRC.c) === 1) {
               return true;
             }
           }
@@ -181,45 +191,21 @@ class Rules {
       // 添加一个明确的返回值，确保所有路径都有返回
       return false;
     } else if (type === 'SP') {
-      // SP突围：当在对方半场，有敌方P或SP走到SP旁边时，
-      // 如对方P或SP身后格不被占据，SP可以立刻斜向此格吃子
+      // SP在特定行时获得斜线行走能力（不能斜线吃子，即仍要检查目标格是否被占据）
+      // 白方：6、7行（r=3、2）；黑方：3、4行（r=4、5）
       if (Math.abs(dc) === 1 && dr === dir) {
-        const targetPiece = board.board[toRC.r][toRC.c];
+        const isOnCorrectRank = (isWhite && (fromRC.r === 3 || fromRC.r === 2)) || 
+                               (!isWhite && (fromRC.r === 4 || fromRC.r === 5));
         
-        // 普通斜向吃子：目标有敌方棋子
-        if (targetPiece && targetPiece.color !== piece.color) {
-          return true;
+        if (isOnCorrectRank) {
+          // 目标格不能被占据（不能斜线吃子）
+          return !board.board[toRC.r][toRC.c];
         }
-        
-        // "突围"走法检查
-        // 检查是否在对方半场（白方在对面5行及以后，黑方在对面5行及以前）
-        const isInOpponentHalf = (isWhite && fromRC.r <= 4) || (!isWhite && fromRC.r >= 5);
-        
-        if (isInOpponentHalf) {
-          // 检查相邻位置是否有敌方P或SP
-          const adjacentPos = this.toPos(fromRC.r, toRC.c); // 同行但与目标同列的位置
-          const adjacentRC = this.toRC(adjacentPos);
-          const adjacentPiece = board.board[adjacentRC.r][adjacentRC.c];
-          
-          if (adjacentPiece && 
-              adjacentPiece.color !== piece.color && 
-              (adjacentPiece.type === 'P' || adjacentPiece.type === 'SP')) {
-            
-            // 检查对方棋子身后格是否为空
-            const behindRC = adjacentRC.r + dir; // 对方棋子身后的行
-            if (behindRC >= 0 && behindRC < 10 && 
-                !board.board[behindRC][adjacentRC.c]) {
-              
-              // 确保目标位置就是对方棋子身后的格子
-              if (toRC.r === behindRC && toRC.c === adjacentRC.c) {
-                return true;
-              }
-            }
-          }
-        }
-        
-        return false;
       }
+      
+     
+      
+      return false;
     }
 
     // 其它情况非法
