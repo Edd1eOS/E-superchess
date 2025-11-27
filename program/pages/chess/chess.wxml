@@ -2,7 +2,11 @@
 
   <!-- 棋盘渲染区 -->
   <view class="board">
-    <chessboard boardState="{{boardState}}" bind:celltap="onCellTap"></chessboard>
+    <chessboard 
+      boardState="{{boardState}}" 
+      bind:celltap="onCellTap"
+      bind:move="onMove"
+    />
   </view>
 
   <!-- 操作区 -->

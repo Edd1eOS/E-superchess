@@ -147,6 +147,9 @@ class Board {
       this.state.kingPos[piece.color] = to;
     }
 
+    // 切换回合
+    this.state.turn = this.state.turn === "W" ? "B" : "W";
+
     return true;
   }
 
@@ -166,8 +169,14 @@ class Board {
     return false;
   }
   
-  undoMove() {
-    this.undo();
+  undoMove(snapshot) {
+    // 使用快照恢复棋盘状态
+    if (snapshot && snapshot.beforeState) {
+      this.board = snapshot.beforeState.board;
+      this.state = snapshot.beforeState.state;
+    } else {
+      this.undo();
+    }
   }
 }
 

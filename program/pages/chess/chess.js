@@ -24,7 +24,8 @@ Page({
   refreshUI() {
     this.setData({
       boardState: this.board.exportForUI(),
-      turn: this.board.turn
+      turn: this.board.state.turn,
+      drawOfferedBy: this.data.drawOfferedBy
     });
   },
 
@@ -35,6 +36,45 @@ Page({
     const { coord } = e.detail || {};
     console.log('Cell tapped:', coord);
     // 在这里把 coord 传给棋盘逻辑：例如 this.board.handleClickByCoord(coord)
+  },
+
+  // 处理棋子移动
+  onMove(e) {
+    const { from, to } = e.detail;
+    console.log(`Moving from ${from} to ${to}`);
+    
+    // 检查移动是否合法
+    if (!this.rules.isValidMove(this.board, from, to, this.board.state.turn)) {
+      wx.showToast({
+        title: 'Invalid move!',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 创建移动前的状态快照用于悔棋和复盘
+    const snapshot = {
+      from: from,
+      to: to,
+      piece: this.getPieceAt(from),
+      capturedPiece: this.getPieceAt(to),
+      beforeState: JSON.parse(JSON.stringify(this.board))
+    };
+
+    // 执行移动
+    this.board.movePiece(from, to);
+    
+    // 记录操作快照
+    this.recorder.recordMove(snapshot);
+
+    // 刷新界面
+    this.refreshUI();
+  },
+
+  // 获取指定位置的棋子
+  getPieceAt(coord) {
+    const { r, c } = this.board.toRC(coord);
+    return this.board.board[r][c];
   },
 
   /* -----------------------------------------
