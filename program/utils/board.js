@@ -157,7 +157,7 @@ class Board {
           Math.abs(tc - fc) === 1 && 
           !this.board[tr][tc] &&
           lastMovedPiece && //con3
-          lastMovedPiece.type === 'P' && 
+          (lastMovedPiece.type === 'P' || lastMovedPiece.type === 'SP') && 
           lastMovedPiece.color !== piece.color &&//con4
           Math.abs(lastMoveToRC.r - lastMoveFromRC.r) === 2 &&
           lastMoveToRC.r === fr &&

@@ -109,4 +109,45 @@
   transition: all 0.12s ease-in-out;
 }
 
-/* 这里写选中的棋子高亮 */
+/* 强化整格选中高亮：整格背景叠加 + 内阴影边框 */
+.cell.selected {
+  /* 覆盖底色，使用半透明蓝色叠加使整格高亮明显 */
+  background-image: linear-gradient(rgba(30,144,255,0.12), rgba(30,144,255,0.12));
+  /* 保留原有深浅底色的视觉，但以叠加色为主 */
+  background-blend-mode: overlay;
+  /* 明显的内阴影作为边框高亮 */
+  box-shadow: inset 0 0 0 6rpx rgba(30,144,255,0.22), 0 6rpx 12rpx rgba(0,0,0,0.06);
+  border-radius: 4rpx;
+  z-index: 45;
+  transform: translateZ(0);
+  transition: box-shadow 120ms ease, background-image 120ms ease, transform 120ms ease;
+}
+
+/* 选中格子内棋子视觉微调（避免棋子自身 outline 覆盖整格） */
+.cell.selected .piece {
+  outline: none;
+  box-shadow: none;
+  transform: scale(1.02);
+}
+
+/* 强化整格目标高亮：黄色半透明背景 + 更粗内阴影 */
+.cell.target {
+  background-image: linear-gradient(rgba(255,215,0,0.14), rgba(255,215,0,0.14));
+  background-blend-mode: overlay;
+  box-shadow: inset 0 0 0 8rpx rgba(255,215,0,0.30);
+  border-radius: 4rpx;
+  z-index: 42;
+  transition: box-shadow 100ms ease, background-image 100ms ease;
+}
+
+/* 若同时是选中与目标（极少见）以选中优先 */
+.cell.selected.target {
+  box-shadow: inset 0 0 0 6rpx rgba(30,144,255,0.22), 0 8rpx 16rpx rgba(0,0,0,0.08);
+  background-image: linear-gradient(rgba(30,144,255,0.12), rgba(30,144,255,0.12));
+}
+
+/* 保持悬停微交互但不盖过高亮效果 */
+.cell:hover {
+  transform: translateY(-2rpx);
+  transition: transform 80ms ease;
+}
