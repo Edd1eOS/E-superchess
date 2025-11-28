@@ -167,13 +167,77 @@ class Board {
       }
     }
 
-    this.board[fr][fc] = null; 
-    this.board[tr][tc] = piece;
+    // 检查是否为王车易位
+    const isCastling = piece.type === 'K' && Math.abs(tc - fc) > 1;
     
-    // 如果是过路兵吃子，移除被吃的敌方兵
-    if (enPassantCapture && enPassantCapturedPos) {
-      const capturedRC = this.toRC(enPassantCapturedPos);
-      this.board[capturedRC.r][capturedRC.c] = null;
+    if (isCastling) {
+      // 王车易位
+      this.board[fr][fc] = null;
+      this.board[tr][tc] = piece;
+      
+      // 移动车
+      if (tc > fc) {
+        // 短易位：王向右移动，车从右侧移到王的左侧
+        const rookCol = 9; // j列
+        const rookTargetCol = 7; // h列
+        const rookPiece = this.board[fr][rookCol];
+        this.board[fr][rookCol] = null;
+        this.board[tr][rookTargetCol] = rookPiece;
+      } else {
+        // 长易位：王向左移动，车从左侧移到王的右侧
+        const rookCol = 0; // a列
+        const rookTargetCol = 3; // d列
+        const rookPiece = this.board[fr][rookCol];
+        this.board[fr][rookCol] = null;
+        this.board[tr][rookTargetCol] = rookPiece;
+      }
+      
+      // 取消王车易位权限
+      if (piece.color === 'W') {
+        this.state.castling.WK = false;
+        this.state.castling.WQ = false;
+      } else {
+        this.state.castling.BK = false;
+        this.state.castling.BQ = false;
+      }
+    } else {
+      // 普通移动
+      this.board[fr][fc] = null; 
+      this.board[tr][tc] = piece;
+      
+      // 如果是过路兵吃子，移除被吃的敌方兵
+      if (enPassantCapture && enPassantCapturedPos) {
+        const capturedRC = this.toRC(enPassantCapturedPos);
+        this.board[capturedRC.r][capturedRC.c] = null;
+      }
+      
+      // 如果移动的是车或王，取消相应易位权限
+      if (piece.type === 'K') {
+        if (piece.color === 'W') {
+          this.state.castling.WK = false;
+          this.state.castling.WQ = false;
+        } else {
+          this.state.castling.BK = false;
+          this.state.castling.BQ = false;
+        }
+        // 更新王位置
+        this.state.kingPos[piece.color] = to;
+      } else if (piece.type === 'R') {
+        // 取消相应车的易位权限
+        if (piece.color === 'W') {
+          if (fc === 0) { // a1的车
+            this.state.castling.WQ = false;
+          } else if (fc === 9) { // j1的车
+            this.state.castling.WK = false;
+          }
+        } else {
+          if (fc === 0) { // a10的车
+            this.state.castling.BQ = false;
+          } else if (fc === 9) { // j10的车
+            this.state.castling.BK = false;
+          }
+        }
+      }
     }
 
     // 记录上一步移动，用于过路兵等规则判断
@@ -183,7 +247,7 @@ class Board {
       piece: { ...piece }
     };
 
-    // 更新王位置
+    // 更新王位置（如果是王的移动）
     if (piece.type === "K") {
       this.state.kingPos[piece.color] = to;
     }
