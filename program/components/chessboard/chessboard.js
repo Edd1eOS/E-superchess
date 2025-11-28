@@ -150,7 +150,7 @@ Component({
       for (let rank = 1; rank <= 10; rank++) {
         for (let file = 0; file < 10; file++) {
           const targetCoord = String.fromCharCode(97 + file) + rank;
-          // 检查移动是否合法（直接调用规则引擎）
+          // 检查移动是否合法
           if (rules.isValidMove(board, coord, targetCoord, turn)) {
             targets.push(targetCoord);
           }

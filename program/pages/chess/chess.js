@@ -52,6 +52,21 @@ Page({
       return;
     }
 
+    // 创建一个临时棋盘来测试这个移动
+    const testBoard = this.rules.cloneBoard(this.board);
+    
+    // 执行移动
+    this.rules.executeMove(testBoard, from, to);
+    
+    // 检查移动后是否自己被将军
+    if (this.rules.isCheck(testBoard, this.board.state.turn)) {
+      wx.showToast({
+        title: '不能让自己被将军！',
+        icon: 'none'
+      });
+      return;
+    }
+
     // 检查是否需要升变
     const promotionNeeded = this.checkPromotionNeeded(from, to);
     if (promotionNeeded) {
@@ -73,6 +88,35 @@ Page({
 
     // 记录操作快照
     this.recorder.recordMove(snapshot);
+
+    // 检查是否将军或将杀
+    const nextTurn = this.board.state.turn; // 注意：movePiece后回合已经切换
+    const currentPlayer = nextTurn === 'W' ? 'B' : 'W'; // 当前操作的玩家
+    
+    // 检查对方是否被将军
+    if (this.rules.isCheck(this.board, nextTurn)) {
+      // 检查是否将杀
+      if (this.rules.isCheckmate(this.board, nextTurn)) {
+        // 将杀，当前玩家获胜
+        wx.showToast({
+          title: `${currentPlayer === 'W' ? '白方' : '黑方'}获胜！`,
+          icon: 'none'
+        });
+        
+        // 跳转到游戏结束页面
+        setTimeout(() => {
+          wx.redirectTo({
+            url: `../endgame/endgame?result=win&winner=${currentPlayer}`
+          });
+        }, 1500);
+      } else {
+        // 仅将军
+        wx.showToast({
+          title: '将军！',
+          icon: 'none'
+        });
+      }
+    }
 
     // 刷新界面
     this.refreshUI();
