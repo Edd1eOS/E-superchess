@@ -52,6 +52,13 @@ Page({
       return;
     }
 
+    // 检查是否需要升变
+    const promotionNeeded = this.checkPromotionNeeded(from, to);
+    if (promotionNeeded) {
+      this.handlePromotion(from, to);
+      return;
+    }
+
     // 创建移动前的状态快照用于悔棋和复盘
     const snapshot = {
       from: from,
@@ -69,6 +76,64 @@ Page({
 
     // 刷新界面
     this.refreshUI();
+  },
+
+  // 检查是否需要升变
+  checkPromotionNeeded(from, to) {
+    const { r: fromR, c: fromC } = this.board.toRC(from);
+    const { r: toR, c: toC } = this.board.toRC(to);
+    const piece = this.board.board[fromR][fromC];
+    
+    // 只有 P、SP、LG 三种兵类棋子可以升变
+    if (!piece || !['P', 'SP', 'LG'].includes(piece.type)) {
+      return false;
+    }
+    
+    // 白方到第1行 (r=0)，黑方到第10行 (r=9) 需要升变
+    const isWhite = piece.color === 'W';
+    return (isWhite && toR === 0) || (!isWhite && toR === 9);
+  },
+
+  // 处理升变
+  handlePromotion(from, to) {
+    const piece = this.getPieceAt(from);
+    
+    // 显示选择框让用户选择升变棋子
+    wx.showActionSheet({
+      itemList: ['Queen(Q)', 'Marshall(M)', 'Templar(T)', 'Rook(R)', 'Bishop(B)', 'Knight(N)'],
+      itemColor: "#000000",
+      success: (res) => {
+        const selectedIndex = res.tapIndex;
+        const promotionPieces = ['Q', 'M', 'T', 'R', 'B', 'N'];
+        const promotedType = promotionPieces[selectedIndex];
+        
+        // 创建移动前的状态快照用于悔棋和复盘
+        const snapshot = {
+          from: from,
+          to: to,
+          piece: this.getPieceAt(from),
+          capturedPiece: this.getPieceAt(to),
+          beforeState: JSON.parse(JSON.stringify(this.board)),
+          promotedType: promotedType // 记录升变类型
+        };
+
+        // 执行移动并升变
+        this.board.movePiece(from, to);
+        
+        // 修改目标位置的棋子为升变后的棋子
+        const { r: toR, c: toC } = this.board.toRC(to);
+        this.board.board[toR][toC] = { type: promotedType, color: piece.color };
+        
+        // 记录操作快照
+        this.recorder.recordMove(snapshot);
+
+        // 刷新界面
+        this.refreshUI();
+      },
+      fail: (res) => {
+        console.log('用户取消选择');
+      }
+    });
   },
 
   // 获取指定位置的棋子
