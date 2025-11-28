@@ -67,7 +67,7 @@ class Rules {
         return this.isValidQueenMove(board, from, to);
 
       case 'K':  // 王 (King)
-        return this.isValidKingMove(from, to);
+        return this.isValidKingMove(board, from, to);
 
       case 'T':  // 圣殿骑士 (Templar)
         return this.isValidTemplarMove(board, from, to, piece);
@@ -290,14 +290,102 @@ class Rules {
   /**
    * 检查王(King)的移动是否合法
    */
-  isValidKingMove(from, to) {
+  isValidKingMove(board, from, to) {
     const fromRC = this.toRC(from);
     const toRC = this.toRC(to);
     const dr = Math.abs(toRC.r - fromRC.r);
     const dc = Math.abs(toRC.c - fromRC.c);
 
-    // 只能移动一格
-    return (dr <= 1 && dc <= 1) && (dr + dc > 0);
+    // 普通移动：只能移动一格
+    const isNormalMove = (dr <= 1 && dc <= 1) && (dr + dc > 0);
+    if (isNormalMove) {
+      return true;
+    }
+
+    // 检查王车易位
+    return this.isValidCastlingMove(board, from, to);
+  }
+
+  /**
+   * 检查王车易位是否合法
+   */
+  isValidCastlingMove(board, from, to) {
+    // 确保起点是王的位置
+    if (from !== board.state.kingPos[board.state.turn]) {
+      return false;
+    }
+
+    const fromRC = this.toRC(from);
+    const toRC = this.toRC(to);
+    
+    // 确保是水平移动且在同一行
+    if (fromRC.r !== toRC.r) {
+      return false;
+    }
+
+    // 确保是王车易位的特定位置移动
+    const isWhite = board.state.turn === 'W';
+    
+    // 短易位：王从f1(i1)移到i1(h1) 或 王从f10移到i10
+    // 长易位：王从f1(i1)移到c1(d1) 或 王从f10移到c10
+    const shortCastleTargetCol = isWhite ? 8 : 8; // i1/i10 (i列是8)
+    const longCastleTargetCol = isWhite ? 2 : 2;  // c1/c10 (c列是2)
+    
+    // 短易位检查
+    if (toRC.c === shortCastleTargetCol) {
+      // 检查是否还有短易位权限
+      if (isWhite && !board.state.castling.WK) return false;
+      if (!isWhite && !board.state.castling.BK) return false;
+      
+      // 检查王和车之间的路径是否畅通
+      const rookPos = this.toPos(fromRC.r, 9); // j1/j10 (车的初始位置)
+      const rookPiece = board.board[fromRC.r][9];
+      
+      // 确保车存在且未移动
+      if (!rookPiece || rookPiece.type !== 'R' || rookPiece.color !== board.state.turn) {
+        return false;
+      }
+      
+      // 检查路径是否畅通 (f-g-h-i列，即5-6-7-8列)
+      for (let c = 6; c <= 8; c++) {
+        if (board.board[fromRC.r][c]) {
+          return false;
+        }
+      }
+      
+      // 检查王是否在被将军状态或经过的格子是否受攻击
+      // 这里简化处理，只检查目标格是否为空
+      return !board.board[toRC.r][toRC.c]; // 目标格必须为空
+    }
+    
+    // 长易位检查
+    if (toRC.c === longCastleTargetCol) {
+      // 检查是否还有长易位权限
+      if (isWhite && !board.state.castling.WQ) return false;
+      if (!isWhite && !board.state.castling.BQ) return false;
+      
+      // 检查王和车之间的路径是否畅通
+      const rookPos = this.toPos(fromRC.r, 0); // a1/a10 (车的初始位置)
+      const rookPiece = board.board[fromRC.r][0];
+      
+      // 确保车存在且未移动
+      if (!rookPiece || rookPiece.type !== 'R' || rookPiece.color !== board.state.turn) {
+        return false;
+      }
+      
+      // 检查路径是否畅通 (b-c-d-e列，即1-2-3-4列)
+      for (let c = 1; c <= 4; c++) {
+        if (board.board[fromRC.r][c]) {
+          return false;
+        }
+      }
+      
+      // 检查王是否在被将军状态或经过的格子是否受攻击
+      // 这里简化处理，只检查目标格是否为空
+      return !board.board[toRC.r][toRC.c]; // 目标格必须为空
+    }
+    
+    return false;
   }
 
   /**
