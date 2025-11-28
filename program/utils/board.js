@@ -252,6 +252,20 @@ class Board {
       this.state.kingPos[piece.color] = to;
     }
 
+    // 检查是否为兵的升变
+    if (piece.type === 'P' || piece.type === 'SP') {
+      const isWhitePawn = piece.color === 'W';
+      const isAtPromotionRank = isWhitePawn ? tr === 0 : tr === 9;
+      
+      if (isAtPromotionRank) {
+        // 兵到达底线，升变为皇后（Q）
+        this.board[tr][tc] = { 
+          type: 'Q',
+          color: piece.color 
+        };
+      }
+    }
+
     // 切换回合
     this.state.turn = this.state.turn === "W" ? "B" : "W";
 
