@@ -12,6 +12,16 @@
   flex-direction: row;
 }
 
+/* 基本容器与触摸优化 */
+.board {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 /* 棋盘格子 */
 .cell {
   width: 70rpx;
@@ -22,11 +32,55 @@
   align-items: center;
   background-color: #f0d9b5; /* 浅色格子 */
   position: relative;
+  box-sizing: border-box;
+  pointer-events: auto;
 }
 
 /* 深色格子 */
 .cell.dark {
   background-color: #b58863;
+  background: #b58863;
+}
+
+/* 浅色格子 */
+.cell.light {
+  background: #f0d9b5;
+}
+
+/* 棋子容器：请在 wxml 中使用 class="piece" */
+.piece {
+  width: 80%;
+  height: 80%;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-drag: none;
+  user-drag: none;
+  touch-action: none;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  pointer-events: auto;
+}
+
+/* 选中状态高亮（立即生效） */
+.selected {
+  outline: 2px solid rgba(30,144,255,0.9);
+  box-shadow: 0 0 8px rgba(30,144,255,0.12);
+  z-index: 40;
+}
+
+/* 可落子目标高亮 */
+.target {
+  box-shadow: inset 0 0 0 3px rgba(255,215,0,0.35);
+}
+
+/* 拖拽中的棋子 */
+.dragging {
+  transition: none !important;
+  transform: scale(1.04);
+  z-index: 60;
+  opacity: 0.95;
+  pointer-events: none;
 }
 
 /* 悬停效果 */
@@ -36,19 +90,23 @@
   transition: all 0.2s ease-in-out;
 }
 
-/* 选中的格子 */
+/* 强化选中与目标高亮样式 */
 .cell.selected {
-  background-color: #aec6cf;
-  box-shadow: inset 0 0 10rpx 4rpx #4a90e2;
+  outline: 2px solid rgba(30,144,255,0.95);
+  box-shadow: 0 0 10rpx rgba(30,144,255,0.18);
+  z-index: 40;
 }
 
-/* 可移动到的目标格子 */
+/* 可落子目标高亮（作用于单元格） */
 .cell.target {
-  background-color: #77dd77;
-  box-shadow: inset 0 0 10rpx 4rpx #228b22;
+  box-shadow: inset 0 0 0 6rpx rgba(255,215,0,0.30);
 }
 
-/* 选中格子上的棋子 */
-piece.selected {
-  filter: brightness(1.2);
+/* 避免 :hover 在某些小程序环境不支持导致问题，保留简单交互 */
+.cell:hover {
+  opacity: 0.92;
+  transform: scale(1.02);
+  transition: all 0.12s ease-in-out;
 }
+
+/* 这里写选中的棋子高亮 */
