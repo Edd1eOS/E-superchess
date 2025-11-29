@@ -1,0 +1,21 @@
+{
+  "name": "superchess-ml-training",
+  "version": "1.0.0",
+  "description": "Machine learning training tools for SuperChess AI",
+  "main": "main.js",
+  "scripts": {
+    "train": "node main.js train",
+    "analyze": "node main.js analyze",
+    "start": "node main.js"
+  },
+  "keywords": [
+    "superchess",
+    "ai",
+    "machine-learning",
+    "chess"
+  ],
+  "author": "SuperChess Developer",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
