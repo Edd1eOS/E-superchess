@@ -8,11 +8,27 @@ Page({
   },
 
   onLoad(options) {
-    // 期望 options.result 为 "1-0" / "0-1" / "0.5-0.5"
-    const result = options.result || "";
+    // 支持多种传参形式：
+    // - result=win&winner=W/B&reason=checkmate|resign
+    // - result=draw&score=0.5-0.5&reason=agreement
+    // - 或直接 result=1-0 / 0-1 / 0.5-0.5
+    const rawResult = options.result || "";
+    const winner = options.winner || "";
+    const score = options.score || "";
     const reason = options.reason || "";
 
-    // 显示友好文本
+    // 规范化比分为 "1-0" / "0-1" / "0.5-0.5"
+    let displayScore = "";
+    if (rawResult === 'win' && (winner === 'W' || winner === 'B')) {
+      displayScore = winner === 'W' ? '1-0' : '0-1';
+    } else if (rawResult === 'draw') {
+      displayScore = score || '0.5-0.5';
+    } else if (['1-0', '0-1', '0.5-0.5'].includes(rawResult)) {
+      displayScore = rawResult;
+    } else {
+      displayScore = score || rawResult || '';
+    }
+
     const resultMap = {
       "1-0": "White wins (1-0)",
       "0-1": "Black wins (0-1)",
@@ -30,27 +46,30 @@ Page({
     };
 
     this.setData({
-      resultText: resultMap[result] || "Game Over",
+      resultText: resultMap[displayScore] || "Game Over",
       reasonText: reasonMap[reason] || (reason ? reason : "")
     });
   },
 
   // 跳转到复盘页面（复盘会从 recorder 中加载最近一局）
   goReplay() {
-    // 创建一个默认的游戏记录数据
-    const replayData = {
-      moves: []
-    };
-    
+    // 尝试从 Recorder 获取最近一局，如不可用则回退空记录
+    const recorder = new Recorder();
+    let replayData = { moves: [] };
+    if (recorder && typeof recorder.getLastGame === 'function') {
+      try { replayData = recorder.getLastGame() || replayData; } catch (e) { /* ignore */ }
+    } else if (recorder && typeof recorder.getLatest === 'function') {
+      try { replayData = recorder.getLatest() || replayData; } catch (e) { /* ignore */ }
+    }
     wx.navigateTo({
-      url: `/pages/replay/replay?data=${encodeURIComponent(JSON.stringify(replayData))}`
+      url: `/program/pages/replay/replay?data=${encodeURIComponent(JSON.stringify(replayData))}`
     });
   },
 
   // 返回主界面
   goMenu() {
     wx.reLaunch({
-      url: '/pages/menu/menu'
+      url: '/program/pages/menu/menu'
     });
   }
 });
