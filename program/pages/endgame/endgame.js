@@ -51,21 +51,6 @@ Page({
     });
   },
 
-  // 跳转到复盘页面（复盘会从 recorder 中加载最近一局）
-  goReplay() {
-    // 尝试从 Recorder 获取最近一局，如不可用则回退空记录
-    const recorder = new Recorder();
-    let replayData = { moves: [] };
-    if (recorder && typeof recorder.getLastGame === 'function') {
-      try { replayData = recorder.getLastGame() || replayData; } catch (e) { /* ignore */ }
-    } else if (recorder && typeof recorder.getLatest === 'function') {
-      try { replayData = recorder.getLatest() || replayData; } catch (e) { /* ignore */ }
-    }
-    wx.navigateTo({
-      url: `/program/pages/replay/replay?data=${encodeURIComponent(JSON.stringify(replayData))}`
-    });
-  },
-
   // 返回主界面
   goMenu() {
     wx.reLaunch({

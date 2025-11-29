@@ -18,10 +18,7 @@ class Recorder {
     return this.moves.length > 0;
   }
 
-  // 获取所有记录用于回放
-  getMoves() {
-    return this.moves;
-  }
+
   
   // 恢复棋盘状态（包括升变）
   restoreBoardState(board, move) {
