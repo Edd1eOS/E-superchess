@@ -67,7 +67,8 @@ Page({
   },
 
   onWhiteLevelChange(e) {
-    const level = parseInt(e.detail.value)
+    // picker返回的是索引，需要加1转换为实际等级
+    const level = parseInt(e.detail.value) + 1
     this.setData({
       'pveSettings.white.level': level
     })
@@ -81,7 +82,8 @@ Page({
   },
 
   onBlackLevelChange(e) {
-    const level = parseInt(e.detail.value)
+    // picker返回的是索引，需要加1转换为实际等级
+    const level = parseInt(e.detail.value) + 1
     this.setData({
       'pveSettings.black.level': level
     })
