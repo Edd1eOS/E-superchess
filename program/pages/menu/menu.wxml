@@ -1,12 +1,78 @@
-
 <view class="container">
 
   <view class="title">国际象棋Pro</view>
 
   <view class="menu-buttons">
     <button bindtap="goPVP">本地对战</button>
-    <button bindtap="goPVE">电脑(简单)</button>
+    <button bindtap="goPVE">人机对战</button>
     <button bindtap="goSettings">设置</button>
   </view>
 
+</view>
+
+<!-- PvE设置对话框 -->
+<view class="pve-settings-modal" wx:if="{{showPvESettings}}">
+  <view class="modal-overlay" bindtap="hidePvESettings"></view>
+  <view class="modal-content">
+    <view class="modal-header">
+      <text class="modal-title">人机对战设置</text>
+    </view>
+    
+    <view class="modal-body">
+      <!-- 白方设置 -->
+      <view class="player-setting">
+        <view class="player-label">
+          <text>白方 (先手)</text>
+        </view>
+        <radio-group class="type-selector" bindchange="onWhiteTypeChange">
+          <label class="radio-item">
+            <radio value="human" checked="{{pveSettings.white.type === 'human'}}"/> 人类
+          </label>
+          <label class="radio-item">
+            <radio value="ai" checked="{{pveSettings.white.type === 'ai'}}"/> 电脑
+          </label>
+        </radio-group>
+        
+        <view class="level-selector" wx:if="{{pveSettings.white.type === 'ai'}}">
+          <picker mode="selector" 
+                  range="{{['1', '2', '3', '4', '5']}}" 
+                  bindchange="onWhiteLevelChange">
+            <view class="level-picker">
+              <text>难度等级: {{pveSettings.white.level}}</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+      
+      <!-- 黑方设置 -->
+      <view class="player-setting">
+        <view class="player-label">
+          <text>黑方 (后手)</text>
+        </view>
+        <radio-group class="type-selector" bindchange="onBlackTypeChange">
+          <label class="radio-item">
+            <radio value="human" checked="{{pveSettings.black.type === 'human'}}"/> 人类
+          </label>
+          <label class="radio-item">
+            <radio value="ai" checked="{{pveSettings.black.type === 'ai'}}"/> 电脑
+          </label>
+        </radio-group>
+        
+        <view class="level-selector" wx:if="{{pveSettings.black.type === 'ai'}}">
+          <picker mode="selector" 
+                  range="{{['1', '2', '3', '4', '5']}}" 
+                  bindchange="onBlackLevelChange">
+            <view class="level-picker">
+              <text>难度等级: {{pveSettings.black.level}}</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
+    
+    <view class="modal-footer">
+      <button class="cancel-btn" bindtap="hidePvESettings">取消</button>
+      <button class="confirm-btn" bindtap="confirmPvESettings">开始游戏</button>
+    </view>
+  </view>
 </view>
