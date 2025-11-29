@@ -54,14 +54,14 @@ Page({
 
     // 创建一个临时棋盘来测试这个移动
     const testBoard = this.rules.cloneBoard(this.board);
-    
+
     // 执行移动
     this.rules.executeMove(testBoard, from, to);
-    
+
     // 检查移动后是否自己被将军
     if (this.rules.isCheck(testBoard, this.board.state.turn)) {
       wx.showToast({
-        title: '不能让自己被将军！',
+        title: '不能送将',
         icon: 'none'
       });
       return;
@@ -92,7 +92,7 @@ Page({
     // 检查是否将军或将杀
     const nextTurn = this.board.state.turn; // 注意：movePiece后回合已经切换
     const currentPlayer = nextTurn === 'W' ? 'B' : 'W'; // 当前操作的玩家
-    
+
     // 检查对方是否被将军
     if (this.rules.isCheck(this.board, nextTurn)) {
       // 检查是否将杀
@@ -102,7 +102,7 @@ Page({
           title: `${currentPlayer === 'W' ? '白方' : '黑方'}获胜！`,
           icon: 'none'
         });
-        
+
         // 跳转到游戏结束页面
         setTimeout(() => {
           wx.redirectTo({
@@ -127,12 +127,12 @@ Page({
     const { r: fromR, c: fromC } = this.board.toRC(from);
     const { r: toR, c: toC } = this.board.toRC(to);
     const piece = this.board.board[fromR][fromC];
-    
+
     // 只有 P、SP、LG 三种兵类棋子可以升变
     if (!piece || !['P', 'SP', 'LG'].includes(piece.type)) {
       return false;
     }
-    
+
     // 白方到第1行 (r=0)，黑方到第10行 (r=9) 需要升变
     const isWhite = piece.color === 'W';
     return (isWhite && toR === 0) || (!isWhite && toR === 9);
@@ -141,7 +141,7 @@ Page({
   // 处理升变
   handlePromotion(from, to) {
     const piece = this.getPieceAt(from);
-    
+
     // 显示选择框让用户选择升变棋子
     wx.showActionSheet({
       itemList: ['Queen(Q)', 'Marshall(M)', 'Templar(T)', 'Rook(R)', 'Bishop(B)', 'Knight(N)'],
@@ -150,7 +150,7 @@ Page({
         const selectedIndex = res.tapIndex;
         const promotionPieces = ['Q', 'M', 'T', 'R', 'B', 'N'];
         const promotedType = promotionPieces[selectedIndex];
-        
+
         // 创建移动前的状态快照用于悔棋和复盘
         const snapshot = {
           from: from,
@@ -163,11 +163,11 @@ Page({
 
         // 执行移动并升变
         this.board.movePiece(from, to);
-        
+
         // 修改目标位置的棋子为升变后的棋子
         const { r: toR, c: toC } = this.board.toRC(to);
         this.board.board[toR][toC] = { type: promotedType, color: piece.color };
-        
+
         // 记录操作快照
         this.recorder.recordMove(snapshot);
 
@@ -205,28 +205,34 @@ Page({
 
   /* -----------------------------------------
    * 求和（OFFER DRAW）
-   * - 双方协商行为，只在此页面处理
-   * - 只有达成时才跳转 endgame
+   * - 直接判定和棋并跳转 endgame 显示 0.5-0.5（不再等待对方接受）
    * ----------------------------------------- */
   onOfferDraw() {
-    const player = this.board.state.turn;
-
-    // 如果对方之前已提出并且当前玩家接受求和
-    if (this.data.drawOfferedBy && this.data.drawOfferedBy !== player) {
-      // 达成和棋
-      wx.redirectTo({
-        url: '../endgame/endgame?result=draw'
-      });
-      return;
-    }
-
-    // 当前玩家提出求和
-    this.setData({ drawOfferedBy: player });
-
+    // 立即和棋并跳转结束页面，带上分数信息便于 endgame 显示
     wx.showToast({
-      title: `${player==='W'?'白方':'黑方'}求和`,
+      title: '和棋（0.5-0.5）',
       icon: 'none'
     });
+    setTimeout(() => {
+      wx.redirectTo({
+        url: '../endgame/endgame?result=draw&score=0.5-0.5'
+      });
+    }, 300);
+  },
+
+  /* -----------------------------------------
+   * 额外绑定：处理页面上可能触发的事件名
+   * onSurrender - 兼容某些组件/模板的 tap 事件
+   * backToMenu  - 返回上一页/主菜单，避免事件未绑定导致的错误
+   * ----------------------------------------- */
+  onSurrender() {
+    // 同认输逻辑
+    this.onResign();
+  },
+
+  backToMenu() {
+    // 优先返回上一页，若需要可替换为跳转到具体菜单页
+    wx.navigateBack({ delta: 1 });
   },
 
   /* -----------------------------------------
