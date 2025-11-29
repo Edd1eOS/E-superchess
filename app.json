@@ -2,7 +2,6 @@
   "pages": [
     "program/pages/menu/menu",
     "program/pages/chess/chess",
-    "program/pages/replay/replay",
     "program/pages/settings/settings",
     "program/pages/endgame/endgame"
   ],

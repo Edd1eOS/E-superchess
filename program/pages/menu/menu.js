@@ -12,12 +12,6 @@ Page({
     })
   },
 
-  goReplay() {
-    wx.navigateTo({
-      url: '/program/pages/replay/replay'
-    })
-  },
-
   goSettings() {
     wx.navigateTo({
       url: '/program/pages/settings/settings'

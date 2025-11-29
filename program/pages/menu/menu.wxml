@@ -6,7 +6,6 @@
   <view class="menu-buttons">
     <button bindtap="goPVP">本地对战</button>
     <button bindtap="goPVE">电脑(简单)</button>
-    <button bindtap="goReplay">复盘</button>
     <button bindtap="goSettings">设置</button>
   </view>
 
