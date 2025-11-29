@@ -1,21 +1,61 @@
 const Board = require('../../utils/board.js');
 const Rules = require('../../utils/rules.js');
 const Recorder = require('../../utils/recorder.js');
+const AI = require('../../utils/ai.js');
 
 Page({
 
   data: {
     boardState: [],       // 用于界面渲染，修改初始值为数组而不是null
     turn: 'W',              // 当前回合
-    drawOfferedBy: null     // null / "W" / "B"
+    drawOfferedBy: null,    // null / "W" / "B"
+    gameMode: 'pvp',        // 'pvp' | 'pve'
+    playerTypes: {          // 玩家类型: 'human' | 'ai'
+      W: 'human',
+      B: 'human'
+    },
+    aiLevels: {             // AI等级
+      W: 1,
+      B: 1
+    }
   },
 
   onLoad(options) {
     this.board = new Board();
     this.rules = new Rules();
     this.recorder = new Recorder();
+    
+    // 解析游戏模式
+    const mode = options.mode || 'pvp';
+    this.setData({
+      gameMode: mode
+    });
+    
+    // 如果是PvE模式，设置玩家类型和AI等级
+    if (mode === 'pve') {
+      const playerTypes = {
+        W: options.whiteType || 'human',
+        B: options.blackType || 'ai'
+      };
+      
+      const aiLevels = {
+        W: parseInt(options.whiteLevel) || 1,
+        B: parseInt(options.blackLevel) || 1
+      };
+      
+      this.setData({
+        playerTypes,
+        aiLevels
+      });
+      
+      // 初始化AI引擎
+      this.ai = new AI();
+    }
 
     this.refreshUI();
+    
+    // 如果第一个玩家是AI，触发AI移动
+    this.makeAIMoveIfNecessary();
   },
 
   /* -----------------------------------------
@@ -27,6 +67,141 @@ Page({
       turn: this.board.state.turn,
       drawOfferedBy: this.data.drawOfferedBy
     });
+  },
+
+  /* -----------------------------------------
+   * 检查是否需要AI行动
+   * ----------------------------------------- */
+  makeAIMoveIfNecessary() {
+    const currentPlayer = this.board.state.turn;
+    if (this.data.gameMode === 'pve' && this.data.playerTypes[currentPlayer] === 'ai') {
+      // 延迟一点时间让AI移动，增加真实感
+      setTimeout(() => {
+        this.makeAIMove();
+      }, 1000);
+    }
+  },
+
+  /* -----------------------------------------
+   * AI移动
+   * ----------------------------------------- */
+  makeAIMove() {
+    const currentPlayer = this.board.state.turn;
+    const aiLevel = this.data.aiLevels[currentPlayer];
+    
+    // 计算AI的下一步移动
+    const move = this.ai.calculateNextMove(this.board, aiLevel);
+    
+    if (move) {
+      // 自动执行AI移动
+      this.autoExecuteMove(move);
+    } else {
+      wx.showToast({
+        title: 'AI无法找到合法移动',
+        icon: 'none'
+      });
+    }
+  },
+
+  /* -----------------------------------------
+   * 自动执行移动
+   * ----------------------------------------- */
+  autoExecuteMove(move) {
+    const { from, to } = move;
+    
+    // 检查是否需要升变
+    const promotionNeeded = this.checkPromotionNeeded(from, to);
+    if (promotionNeeded) {
+      // AI默认升变为皇后
+      this.handleAIProomotion(from, to);
+      return;
+    }
+
+    // 创建移动前的状态快照用于悔棋和复盘
+    const snapshot = {
+      from: from,
+      to: to,
+      piece: this.getPieceAt(from),
+      capturedPiece: this.getPieceAt(to),
+      beforeState: JSON.parse(JSON.stringify(this.board))
+    };
+
+    // 执行移动
+    this.board.movePiece(from, to);
+
+    // 记录操作快照
+    this.recorder.recordMove(snapshot);
+
+    // 检查是否将军或将杀
+    const nextTurn = this.board.state.turn; // 注意：movePiece后回合已经切换
+    const movedPlayer = nextTurn === 'W' ? 'B' : 'W'; // 当前操作的玩家
+
+    // 检查对方是否被将军
+    if (this.rules.isCheck(this.board, nextTurn)) {
+      // 检查是否将杀
+      if (this.rules.isCheckmate(this.board, nextTurn)) {
+        // 将杀，当前玩家获胜
+        wx.showToast({
+          title: `${movedPlayer === 'W' ? '白方' : '黑方'}获胜！`,
+          icon: 'none'
+        });
+
+        // 跳转到游戏结束页面（带上 winner 与 reason）
+        setTimeout(() => {
+          wx.redirectTo({
+            url: `../endgame/endgame?result=win&winner=${movedPlayer}&reason=checkmate`
+          });
+        }, 1500);
+      } else {
+        // 仅将军
+        wx.showToast({
+          title: '将军！',
+          icon: 'none'
+        });
+      }
+    }
+
+    // 刷新界面
+    this.refreshUI();
+    
+    // 检查下一个玩家是否为AI
+    this.makeAIMoveIfNecessary();
+  },
+
+  /* -----------------------------------------
+   * AI升变处理
+   * ----------------------------------------- */
+  handleAIProomotion(from, to) {
+    const piece = this.getPieceAt(from);
+    
+    // AI默认升变为皇后（最强棋子）
+    const promotedType = 'Q';
+
+    // 创建移动前的状态快照用于悔棋和复盘
+    const snapshot = {
+      from: from,
+      to: to,
+      piece: this.getPieceAt(from),
+      capturedPiece: this.getPieceAt(to),
+      beforeState: JSON.parse(JSON.stringify(this.board)),
+      promotedType: promotedType // 记录升变类型
+    };
+
+    // 执行移动并升变
+    this.board.movePiece(from, to);
+
+    // 修改目标位置的棋子为升变后的棋子
+    const { r: toR, c: toC } = this.board.toRC(to);
+    this.board.board[toR][toC] = { type: promotedType, color: piece.color };
+
+    // 记录操作快照
+    this.recorder.recordMove(snapshot);
+
+    // 刷新界面
+    this.refreshUI();
+    
+    // 检查下一个玩家是否为AI
+    this.makeAIMoveIfNecessary();
   },
 
   /* -----------------------------------------
@@ -42,6 +217,16 @@ Page({
   onMove(e) {
     const { from, to } = e.detail;
     console.log(`Moving from ${from} to ${to}`);
+
+    // 检查是否轮到人类玩家
+    const currentPlayer = this.board.state.turn;
+    if (this.data.gameMode === 'pve' && this.data.playerTypes[currentPlayer] === 'ai') {
+      wx.showToast({
+        title: '请等待AI行动',
+        icon: 'none'
+      });
+      return;
+    }
 
     // 检查移动是否合法
     if (!this.rules.isValidMove(this.board, from, to, this.board.state.turn)) {
@@ -91,7 +276,7 @@ Page({
 
     // 检查是否将军或将杀
     const nextTurn = this.board.state.turn; // 注意：movePiece后回合已经切换
-    const currentPlayer = nextTurn === 'W' ? 'B' : 'W'; // 当前操作的玩家
+    const movedPlayer = nextTurn === 'W' ? 'B' : 'W'; // 当前操作的玩家
 
     // 检查对方是否被将军
     if (this.rules.isCheck(this.board, nextTurn)) {
@@ -99,14 +284,14 @@ Page({
       if (this.rules.isCheckmate(this.board, nextTurn)) {
         // 将杀，当前玩家获胜
         wx.showToast({
-          title: `${currentPlayer === 'W' ? '白方' : '黑方'}获胜！`,
+          title: `${movedPlayer === 'W' ? '白方' : '黑方'}获胜！`,
           icon: 'none'
         });
 
         // 跳转到游戏结束页面（带上 winner 与 reason）
         setTimeout(() => {
           wx.redirectTo({
-            url: `../endgame/endgame?result=win&winner=${currentPlayer}&reason=checkmate`
+            url: `../endgame/endgame?result=win&winner=${movedPlayer}&reason=checkmate`
           });
         }, 1500);
       } else {
@@ -120,6 +305,9 @@ Page({
 
     // 刷新界面
     this.refreshUI();
+    
+    // 检查下一个玩家是否为AI
+    this.makeAIMoveIfNecessary();
   },
 
   // 检查是否需要升变
@@ -173,6 +361,9 @@ Page({
 
         // 刷新界面
         this.refreshUI();
+        
+        // 检查下一个玩家是否为AI
+        this.makeAIMoveIfNecessary();
       },
       fail: (res) => {
         console.log('用户取消选择');
