@@ -103,10 +103,10 @@ Page({
           icon: 'none'
         });
 
-        // 跳转到游戏结束页面
+        // 跳转到游戏结束页面（带上 winner 与 reason）
         setTimeout(() => {
           wx.redirectTo({
-            url: `../endgame/endgame?result=win&winner=${currentPlayer}`
+            url: `../endgame/endgame?result=win&winner=${currentPlayer}&reason=checkmate`
           });
         }, 1500);
       } else {
@@ -205,7 +205,7 @@ Page({
 
   /* -----------------------------------------
    * 求和（OFFER DRAW）
-   * - 直接判定和棋并跳转 endgame 显示 0.5-0.5（不再等待对方接受）
+   * - 直接判定和棋并跳转 endgame 显示0.5-0.5（不再等待对方接受）
    * ----------------------------------------- */
   onOfferDraw() {
     // 立即和棋并跳转结束页面，带上分数信息便于 endgame 显示
@@ -215,7 +215,7 @@ Page({
     });
     setTimeout(() => {
       wx.redirectTo({
-        url: '../endgame/endgame?result=draw&score=0.5-0.5'
+        url: '../endgame/endgame?result=draw&score=0.5-0.5&reason=agreement'
       });
     }, 300);
   },
@@ -241,8 +241,9 @@ Page({
    * ----------------------------------------- */
   onResign() {
     const winner = this.board.state.turn === 'W' ? 'B' : 'W';
+    // 认输时明确 reason=resign
     wx.redirectTo({
-      url: '../endgame/endgame?result=win&winner=' + winner
+      url: '../endgame/endgame?result=win&winner=' + winner + '&reason=resign'
     });
   }
 });
