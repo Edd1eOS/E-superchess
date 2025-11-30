@@ -35,14 +35,22 @@ class Trainer:
         self.config = config
 
     def run_self_play(self, num_games):
-        for _ in range(num_games):
-            # ... 循环直到游戏结束
-            # Call self.mcts.search() to get move and Pi_target
-            # Store (State, Pi_target, Game_Result_Z)
-            pass
+        """运行自我对弈"""
+        # 这里应该实现完整的自我对弈逻辑
+        # 为简化，我们只打印信息
+        print(f"运行 {num_games} 局自我对弈游戏")
+        # 实际实现应该：
+        # 1. 初始化游戏状态
+        # 2. 使用MCTS搜索动作
+        # 3. 执行动作并更新游戏状态
+        # 4. 记录状态、动作概率和游戏结果
+        # 5. 直到游戏结束
+        # 6. 返回训练数据
 
     def train_step(self, data_loader):
+        """训练步骤"""
         self.model.train()
+        total_loss = 0
         for states, pi_targets, z_targets in data_loader:
             self.optimizer.zero_grad()
             
@@ -59,3 +67,5 @@ class Trainer:
             
             total_loss.backward()
             self.optimizer.step()
+            
+        return total_loss.item()
