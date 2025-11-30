@@ -281,12 +281,8 @@ class Rules {
         // 检查是否到达底线需要升变
         const isPromotion = (isWhite && toRC.r === 0) || (!isWhite && toRC.r === 9);
         if (type === 'P') {
-          // P兵直走时目标必须为空
+          // P兵直走时目标必须为空，即使是升变也不能吃子
           const isEmptyTarget = !board.board[toRC.r][toRC.c];
-          // 如果是升变情况，允许移动到最后一行
-          if (isPromotion) {
-            return true;
-          }
           return isEmptyTarget;
         } else if (type === 'SP') {
           // SP长矛兵直走时目标可以不为空
@@ -330,7 +326,7 @@ class Rules {
         // 检查是否到达底线需要升变
         const isPromotion = (isWhite && toRC.r === 0) || (!isWhite && toRC.r === 9);
         if (targetPiece && targetPiece.color !== piece.color) {
-          // 如果是升变情况，允许斜向移动到最后一行
+          // 如果是升变情况，允许斜向移动到最后一行吃子
           if (isPromotion) {
             return true;
           }
