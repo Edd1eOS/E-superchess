@@ -23,6 +23,9 @@ from config import CONFIG
 # 导入本地模块
 from rules import Rules
 
+# 导入模型工具
+from model_utils import save_model, export_model_for_inference
+
 # 使用importlib导入以数字开头的模块
 def import_module_from_file(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
@@ -178,6 +181,7 @@ def main():
         criterion_policy = nn.CrossEntropyLoss()
         criterion_value = nn.MSELoss()
         
+        best_loss = float('inf')
         model.train()
         for epoch in range(cfg['epochs']):
             total_loss = 0
@@ -195,9 +199,19 @@ def main():
                 
                 total_loss += loss.item()
             
-            print(f"Epoch {epoch+1}/{cfg['epochs']}, Loss: {total_loss/len(dataloader):.4f}")
+            avg_loss = total_loss/len(dataloader)
+            print(f"Epoch {epoch+1}/{cfg['epochs']}, Loss: {avg_loss:.4f}")
+            
+            # 保存最佳模型到checkpoint目录
+            if avg_loss < best_loss:
+                best_loss = avg_loss
+                save_model(model, optimizer, epoch+1, avg_loss, "checkpoint/best_model.pth")
         
         print("模型训练完成！")
+        
+        # 9. 导出模型用于推理到checkpoint目录
+        export_model_for_inference(model, "checkpoint/final_model.pth")
+        print("模型已导出用于推理！")
     else:
         print("没有收集到训练数据")
     
