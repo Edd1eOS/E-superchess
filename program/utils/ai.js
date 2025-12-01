@@ -28,6 +28,10 @@ class AI {
       // 2级AI：随机合法 + 不送子 (固定规则)
       return this.calculateLevel2Move_Fixed(board); 
     }
+      else if (level === 3) {
+        //3级ai：调用ml_pytorch训练结果模型
+        return this.calculateLevel3Move_Fixed(board);
+      }
     return null;
   }
 
@@ -94,6 +98,15 @@ class AI {
         }
     }
     return true; // 安全
+
+  }
+
+  // --- 3级ai（从ml_pytorch/checkpoint中调用pth训练结果模型）
+
+  calculateLevel3Move_Fixed(board){
+    //分三步：1.用api调用pth文件；2.用模型进行演算，并最终只传出被选择的move ；3.返回move执行移动操作，渲染
+    //将在ml_pytorch/中添加添加API服务（如api_server.py）（完成后删除此注释）
+    
 
   }
 
