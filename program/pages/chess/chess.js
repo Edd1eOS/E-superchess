@@ -50,6 +50,13 @@ Page({
       
       // 初始化AI引擎
       this.ai = new AI();
+
+      // 尝试为 Level3 初始化 TF.js 模型（如果在 AI 内已配置 modelUrl，此处可不传参）
+      if (typeof this.ai.initLevel3 === 'function') {
+        // 如果你更倾向在这里显式指定 URL，可以把实际地址填到参数里
+        // 例如：this.ai.initLevel3('https://your-domain.com/path/to/model.json');
+        this.ai.initLevel3();
+      }
     }
 
     this.refreshUI();
@@ -85,12 +92,28 @@ Page({
   /* -----------------------------------------
    * AI移动
    * ----------------------------------------- */
-  makeAIMove() {
+  async makeAIMove() {
     const currentPlayer = this.board.state.turn;
     const aiLevel = this.data.aiLevels[currentPlayer];
     
-    // 计算AI的下一步移动
-    const move = this.ai.calculateNextMove(this.board, aiLevel);
+    // 计算AI的下一步移动（Level3 为异步）
+    let move = null;
+    try {
+      if (typeof this.ai.calculateNextMoveAsync === 'function') {
+        move = await this.ai.calculateNextMoveAsync(this.board, aiLevel);
+      } else {
+        // 兼容旧版本：仅支持同步接口
+        move = this.ai.calculateNextMove(this.board, aiLevel);
+      }
+    } catch (e) {
+      console.error('AI move error:', e);
+      wx.showToast({
+        title: 'AI计算出错，使用简化引擎',
+        icon: 'none'
+      });
+      // 回退到 Level2 简单规则
+      move = this.ai.calculateNextMove(this.board, 2);
+    }
     
     if (move) {
       // 自动执行AI移动
