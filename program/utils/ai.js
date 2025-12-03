@@ -2,10 +2,11 @@
  * AI 引擎管理：
  * - Level 1：随机合法走子
  * - Level 2：随机合法 + 不送子
- * - Level 3：MCTS + DNN (TF.js)
+ * - Level 3：基础规则过滤 + 位置评估
+ * - Level 4：增强规则过滤 + 更深入的位置评估
+ * - Level 5：高级规则过滤 + 最优位置评估
  */
 const Rules = require('./rules.js');
-const MCTS = require('./mcts.js');
 
 class AI {
   constructor() {
@@ -18,53 +19,51 @@ class AI {
       'R': 500, 'B': 300, 'N': 300, 'P': 100, 
       'SP': 100, 'LG': 100
     };
-
-    // Level3 相关资源（模型 + MCTS），按需懒加载
-    // TODO: 将下面的 modelUrl 替换为你自己部署的 TF.js model.json 实际地址
-    this.level3 = {
-      initialized: false,
-      model: null,
-      mcts: null,
-      modelUrl: 'http://192.168.1.23:8000/model.json'
-    };
+    
+    // 中心控制权重
+    this.centerControlWeights = {};
+    // 初始化中心权重 - 中心区域权重更高
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
+        const pos = this.rules.toPos(r, c);
+        // 计算到中心的距离，越近权重越高
+        const centerDistance = Math.sqrt(Math.pow(r - 4.5, 2) + Math.pow(c - 4.5, 2));
+        // 中心权重在5-25之间
+        this.centerControlWeights[pos] = Math.max(5, 25 - centerDistance * 3);
+      }
+    }
   }
 
   // --- 公共接口方法 ---
 
   /**
-   * 同步接口：仅支持 Level1 / Level2（兼容旧逻辑）
+   * 同步接口：支持 Level1 / Level2 / Level3 / Level4 / Level5
    */
   calculateNextMove(board, level = 2) {
     this.aiColor = board.state.turn; // 确定 AI 当前的回合颜色
     
-    if (level === 1) {
-      // 1级AI：随机合法移动
-      return this.calculateLevel1Move(board);
-    } else if (level >= 2) {
-      // 2级AI：随机合法 + 不送子 (固定规则)
-      return this.calculateLevel2Move_Fixed(board); 
+    switch(level) {
+      case 1:
+        return this.calculateLevel1Move(board);
+      case 2:
+        return this.calculateLevel2Move(board);
+      case 3:
+        return this.calculateLevel3Move(board);
+      case 4:
+        return this.calculateLevel4Move(board);
+      case 5:
+        return this.calculateLevel5Move(board);
+      default:
+        return this.calculateLevel2Move(board);
     }
-    return null;
   }
 
   /**
-   * 异步接口：支持 Level1 / Level2 / Level3
-   * - Level1 / Level2 直接复用同步逻辑
-   * - Level3 使用 TF.js + MCTS（异步）
+   * 异步接口：支持所有级别AI
    */
   async calculateNextMoveAsync(board, level = 2) {
-    this.aiColor = board.state.turn;
-
-    if (level === 1) {
-      return this.calculateLevel1Move(board);
-    }
-    if (level === 2) {
-      return this.calculateLevel2Move_Fixed(board);
-    }
-    if (level === 3) {
-      return await this.calculateLevel3Move_Fixed(board);
-    }
-    return null;
+    // 所有级别现在都是同步的，直接调用同步方法
+    return this.calculateNextMove(board, level);
   }
 
   // 1级AI：随机合法移动
@@ -81,9 +80,8 @@ class AI {
     return legalMoves[Math.floor(Math.random() * legalMoves.length)];
   }
 
-  // --- 2级AI核心算法：不送子规则 ---
-
-  calculateLevel2Move_Fixed(board) {
+  // 2级AI：随机合法 + 不送子规则
+  calculateLevel2Move(board) {
     const allMoves = this.getLegalMovesOptimized(board);
     if (allMoves.length === 0) return null;
 
@@ -103,6 +101,105 @@ class AI {
     
     // 2. 否则，返回一个随机的安全移动
     return movesToUse[Math.floor(Math.random() * movesToUse.length)];
+  }
+
+  // 3级AI：基础规则过滤 + 位置评估
+  calculateLevel3Move(board) {
+    const allMoves = this.getLegalMovesOptimized(board);
+    if (allMoves.length === 0) return null;
+
+    // 筛选出安全的移动
+    const safeMoves = allMoves.filter(move => this.isMoveSafe(board, move));
+    const movesToUse = safeMoves.length > 0 ? safeMoves : allMoves;
+
+    // 评估所有候选移动
+    const evaluatedMoves = movesToUse.map(move => ({
+      move: move,
+      score: this.evaluateMove(board, move)
+    }));
+
+    // 按分数排序，高分优先
+    evaluatedMoves.sort((a, b) => b.score - a.score);
+    
+    // 返回最高分的移动
+    return evaluatedMoves[0]?.move || null;
+  }
+
+  // 4级AI：增强规则过滤 + 更深入的位置评估
+  calculateLevel4Move(board) {
+    const allMoves = this.getLegalMovesOptimized(board);
+    if (allMoves.length === 0) return null;
+
+    // 多层次筛选移动
+    let candidateMoves = allMoves;
+    
+    // 第一层：筛选安全移动
+    const safeMoves = allMoves.filter(move => this.isMoveSafe(board, move));
+    if (safeMoves.length > 0) {
+      candidateMoves = safeMoves;
+    }
+
+    // 第二层：进一步筛选更具战略意义的移动
+    const strategicMoves = candidateMoves.filter(move => this.isStrategicMove(board, move));
+    if (strategicMoves.length > 0) {
+      candidateMoves = strategicMoves;
+    }
+
+    // 评估候选移动
+    const evaluatedMoves = candidateMoves.map(move => ({
+      move: move,
+      score: this.evaluateMoveEnhanced(board, move)
+    }));
+
+    // 按分数排序，高分优先
+    evaluatedMoves.sort((a, b) => b.score - a.score);
+    
+    // 有一定概率选择最佳移动或者前几个中的一个（增加多样性）
+    if (evaluatedMoves.length > 0) {
+      const pickIndex = Math.min(Math.floor(Math.random() * 3), evaluatedMoves.length - 1);
+      return evaluatedMoves[pickIndex].move;
+    }
+    
+    return null;
+  }
+
+  // 5级AI：高级规则过滤 + 最优位置评估
+  calculateLevel5Move(board) {
+    const allMoves = this.getLegalMovesOptimized(board);
+    if (allMoves.length === 0) return null;
+
+    // 多层次筛选移动
+    let candidateMoves = allMoves;
+    
+    // 第一层：筛选安全移动
+    const safeMoves = allMoves.filter(move => this.isMoveSafe(board, move));
+    if (safeMoves.length > 0) {
+      candidateMoves = safeMoves;
+    }
+
+    // 第二层：筛选战略性移动
+    const strategicMoves = candidateMoves.filter(move => this.isStrategicMove(board, move));
+    if (strategicMoves.length > 0) {
+      candidateMoves = strategicMoves;
+    }
+
+    // 第三层：筛选具有发展性的移动
+    const developmentalMoves = candidateMoves.filter(move => this.isDevelopmentalMove(board, move));
+    if (developmentalMoves.length > 0) {
+      candidateMoves = developmentalMoves;
+    }
+
+    // 评估候选移动（使用最复杂的评估函数）
+    const evaluatedMoves = candidateMoves.map(move => ({
+      move: move,
+      score: this.evaluateMoveAdvanced(board, move)
+    }));
+
+    // 按分数排序，高分优先
+    evaluatedMoves.sort((a, b) => b.score - a.score);
+    
+    // 返回最高分的移动
+    return evaluatedMoves[0]?.move || null;
   }
 
   /**
@@ -130,217 +227,548 @@ class AI {
         }
     }
     return true; // 安全
-
-  }
-
-  // --- 3级ai（从ml_pytorch/checkpoint中调用pth训练结果模型）
-
-  /**
-   * Level3 初始化：加载 TF.js 模型并构建 MCTS
-   * - modelUrl: TF.js GraphModel 的 model.json 访问地址
-   *   （建议你把由 .pth 转换后的 TF.js 模型部署到静态服务器或云存储，再把访问 URL 填写到这里）
-   */
-  async initLevel3(modelUrl) {
-    if (this.level3.initialized) return;
-
-    // 如果没有显式传入 modelUrl，可以在这里设置一个默认值
-    this.level3.modelUrl = modelUrl || this.level3.modelUrl;
-    if (!this.level3.modelUrl) {
-      console.warn('Level3: 未配置 modelUrl，请在 initLevel3(modelUrl) 中传入 TF.js 模型地址');
-      return;
-    }
-
-    // 注意：在微信小程序中通常通过插件提供 tf 对象
-    // 1）推荐方式：const tf = requirePlugin('tfjsPlugin');
-    // 2）也可以在 app.js 中手动挂到 wx.tf / globalThis.tf 供全局使用
-    // 这里优先尝试插件，然后再通过全局 / wx.tf 获取 TF.js，避免与本地变量同名导致 typeof 抛错
-    let tfjs = null;
-    // 优先从小程序插件获取
-    if (typeof requirePlugin === 'function') {
-      try {
-        const pluginTf = requirePlugin('tfjsPlugin');
-        if (pluginTf) {
-          tfjs = pluginTf;
-        }
-      } catch (e) {
-        console.warn('Level3: requirePlugin("tfjsPlugin") 失败，请确认已在 app.json 中正确配置 tfjs 插件：', e);
-      }
-    }
-
-    // 其次尝试从 wx.tf / 全局对象获取
-    if (!tfjs && typeof wx !== 'undefined' && wx.tf) {
-      tfjs = wx.tf;
-    } else if (!tfjs && typeof globalThis !== 'undefined' && globalThis.tf) {
-      tfjs = globalThis.tf;
-    } else if (!tfjs && typeof window !== 'undefined' && window.tf) {
-      tfjs = window.tf;
-    } else if (!tfjs && typeof global !== 'undefined' && global.tf) {
-      tfjs = global.tf;
-    }
-
-    if (!tfjs) {
-      console.warn('Level3: 未找到 TF.js 对象，请确认已正确引入 @tensorflow/tfjs / tfjs-wechat 插件，并暴露为全局 tf 或 wx.tf');
-      return;
-    }
-
-    // 1. 异步加载 GraphModel
-    this.level3.model = await tfjs.loadGraphModel(this.level3.modelUrl);
-
-    // 2. 使用 MCTS 包裹策略-价值函数
-    this.level3.mcts = new MCTS({
-      numSimulations: 1500, // Level3 搜索次数
-      getLegalMoves: (b) => this.getLegalMovesOptimized(b),
-      applyMove: (b, move) => this.makeMoveAndSwitchTurn(b, move),
-      policyValueFn: async (b, legalMoves) => {
-        return await this._level3PolicyValue(tfjs, b, legalMoves);
-      },
-      cPuct: 1.5
-    });
-
-    this.level3.initialized = true;
   }
 
   /**
-   * Level3 主流程：TF.js + MCTS 选择一步走子
+   * 判断移动是否具有战略意义
+   * @param {Object} board - 当前棋盘
+   * @param {Object} move - 待检查的移动
+   * @returns {boolean} - true 如果具有战略意义
    */
-  async calculateLevel3Move_Fixed(board){
-    // 懒加载初始化：第一次调用时再去加载模型
-    if (!this.level3.initialized) {
-      // 你可以在这里设置默认模型地址，也可以在外部先调用 initLevel3(modelUrl)
-      // 例如：this.level3.modelUrl = 'https://your-host/path/to/model.json';
-      await this.initLevel3();
+  isStrategicMove(board, move) {
+    // 吃子总是具有战略意义
+    if (move.capturedPiece) return true;
+    
+    // 控制中心位置的移动具有战略意义 (中心为 d5, e5, d6, e6)
+    const centerPositions = ['d5', 'e5', 'd6', 'e6'];
+    if (centerPositions.includes(move.to)) return true;
+    
+    // 王车易位具有战略意义
+    if (move.piece.type === 'K' && Math.abs(move.from.charCodeAt(0) - move.to.charCodeAt(0)) > 1) {
+      return true;
     }
-
-    if (!this.level3.initialized || !this.level3.mcts) {
-      console.warn('Level3: 初始化失败，退回到 Level2 逻辑');
-      return this.calculateLevel2Move_Fixed(board);
-    }
-
-    // 使用 MCTS 搜索得到最佳走子
-    const move = await this.level3.mcts.getBestMove(board);
-    return move || this.calculateLevel2Move_Fixed(board);
+    
+    return false;
   }
 
   /**
-   * 策略-价值网络封装：
-   * - 输入：棋盘状态 + 当前所有合法走子
-   * - 输出：与 legalMoves 对齐的策略概率数组 policy[]，以及标量价值 value
-   *
-   * 注意：这里的编码方式、模型输出格式需要与你在 Python 中训练 / 转换时保持一致。
+   * 判断移动是否具有发展性
+   * @param {Object} board - 当前棋盘
+   * @param {Object} move - 待检查的移动
+   * @returns {boolean} - true 如果具有发展性
    */
-  async _level3PolicyValue(tf, board, legalMoves) {
-    // 1. 将棋盘状态编码为张量（注意：模型期望 NCHW 格式 [N, C, H, W]）
-    const inputTensor = this._encodeBoardToTensor(tf, board);
-
-    // 2. 调用模型进行前向推理
-    // 这里假设模型输出为 [policyTensor, valueTensor]
-    const outputs = this.level3.model.predict(inputTensor);
-    const policyTensor = Array.isArray(outputs) ? outputs[0] : outputs;
-    const valueTensor = Array.isArray(outputs) ? outputs[1] : null;
-
-    const policyFlat = await policyTensor.data();
-    let value = 0;
-    if (valueTensor) {
-      const valueData = await valueTensor.data();
-      value = valueData[0];
+  isDevelopmentalMove(board, move) {
+    // 发展性移动包括：出子、控制关键线路等
+    if (this.isStrategicMove(board, move)) return true;
+    
+    // 兵的推进具有发展性
+    if (move.piece.type === 'P' || move.piece.type === 'SP') {
+      // 兵向前推进
+      const fromRow = parseInt(move.from[1]);
+      const toRow = parseInt(move.to[1]);
+      const direction = move.piece.color === 'W' ? 1 : -1;
+      
+      // 正向推进至少两格认为具有发展性
+      if ((toRow - fromRow) * direction >= 2) return true;
     }
-
-    // 3. 将全局动作空间的策略向量映射到当前合法走子集合
-    const boardSize = board.board.length; // 例如 10x10
-    const actionSize = boardSize * boardSize * boardSize * boardSize; // from(ij) -> to(kl)
-
-    const policy = new Array(legalMoves.length).fill(1 / legalMoves.length);
-
-    if (policyFlat.length === actionSize) {
-      for (let i = 0; i < legalMoves.length; i++) {
-        const mv = legalMoves[i];
-        const fromRC = this.rules.toRC(mv.from);
-        const toRC = this.rules.toRC(mv.to);
-        const fromIndex = fromRC.r * boardSize + fromRC.c;
-        const toIndex = toRC.r * boardSize + toRC.c;
-        const actionIndex = fromIndex * boardSize * boardSize + toIndex;
-        policy[i] = policyFlat[actionIndex] || 0;
-      }
-    } else {
-      // 这里做一次提示，方便你排查模型输出维度与动作编码是否一致
-      console.warn(
-        `Level3: 模型策略向量长度 (${policyFlat.length}) 与预期动作空间 (${actionSize}) 不一致，将退回到均匀分布。` +
-        ' 请检查训练端的动作编码规则与当前 JS 实现是否一致（棋盘大小 / from-to 编码）。'
-      );
-    }
-
-    // 4. 归一化策略
-    let sumP = policy.reduce((a, b) => a + b, 0);
-    if (sumP <= 0) {
-      // 若网络输出全 0，则使用均匀分布
-      const uniform = 1 / legalMoves.length;
-      for (let i = 0; i < policy.length; i++) policy[i] = uniform;
-    } else {
-      for (let i = 0; i < policy.length; i++) policy[i] /= sumP;
-    }
-
-    // 5. 释放张量
-    tf.dispose([inputTensor, policyTensor, valueTensor].filter(Boolean));
-
-    return { policy, value };
+    
+    return false;
   }
 
   /**
-   * 将 JS 棋盘状态编码为网络输入张量（与 Python 端 DataPipeline.board2tensor 对齐）
-   * - 通道数：CONFIG.num_channels（当前为 3）
-   * - 使用与 ml_pytorch/4_pipeline.py 中 _get_channel_for_piece 相同的映射规则：
-   *   piece_types = ['P','N','B','R','Q','K','SP','T','M','A','LG']
-   *   白子通道：type_index % num_channels
-   *   黑子通道：(type_index + len(piece_types)) % num_channels
+   * 基础移动评估函数 (Level 3)
+   * 包含：材料价值、中心控制、基本安全检查
+   * @param {Object} board - 当前棋盘
+   * @param {Object} move - 待评估的移动
+   * @returns {number} - 评估分数
    */
-  _encodeBoardToTensor(tf, board) {
-    const boardSize = board.board.length; // 例如 10
-    const H = boardSize;
-    const W = boardSize;
-    const C = 3; // 与 CONFIG.num_channels / DataPipeline 保持一致（model.json 里是 [N, 3, 10, 10]）
+  evaluateMove(board, move) {
+    let score = 0;
+    
+    // 1. 材料价值
+    if (move.capturedPiece) {
+      score += this.pieceValues[move.capturedPiece.type] || 0;
+    }
+    
+    // 2. 中心控制奖励
+    const centerPositions = ['d5', 'e5', 'd6', 'e6'];
+    if (centerPositions.includes(move.to)) {
+      score += 10;
+    }
+    
+    // 3. 安全性奖励（避免送子）
+    if (this.isMoveSafe(board, move)) {
+      score += 5;
+    }
+    
+    return score;
+  }
 
-    // 使用 NCHW: [1, C, H, W] 作为 TF.js 输入，以与转换后的 GraphModel 完全对齐
-    const data = new Float32Array(C * H * W);
+  /**
+   * 增强移动评估函数 (Level 4)
+   * 在基础评估基础上增加：战略位置、发展性、更严格的安全部署
+   * @param {Object} board - 当前棋盘
+   * @param {Object} move - 待评估的移动
+   * @returns {number} - 评估分数
+   */
+  evaluateMoveEnhanced(board, move) {
+    let score = this.evaluateMove(board, move);
+    
+    // 1. 战略位置奖励
+    if (this.isStrategicMove(board, move)) {
+      score += 20;
+    }
+    
+    // 2. 发展性奖励
+    if (this.isDevelopmentalMove(board, move)) {
+      score += 15;
+    }
+    
+    // 3. 对手反击惩罚（更严格的安全部署）
+    if (!this.isMoveSafe(board, move)) {
+      score -= 50;
+    }
+    
+    return score;
+  }
 
-    // 与 Python DataPipeline 中的 piece_types 保持一致
-    const pieceTypes = ['P', 'N', 'B', 'R', 'Q', 'K', 'SP', 'T', 'M', 'A', 'LG'];
-    const numChannels = C;
+  /**
+   * 高级移动评估函数 (Level 5)
+   * 在增强评估基础上增加：全局局势评估、王的安全、兵线结构、活动性等
+   * @param {Object} board - 当前棋盘
+   * @param {Object} move - 待评估的移动
+   * @returns {number} - 评估分数
+   */
+  evaluateMoveAdvanced(board, move) {
+    // 先执行基础和增强评估
+    let score = this.evaluateMoveEnhanced(board, move);
+    
+    // 1. 对王的威胁奖励
+    if (move.capturedPiece && move.capturedPiece.type === 'A') {
+      score += 500;
+    }
+    
+    // 2. 对重要子力的威胁奖励
+    if (move.capturedPiece && ['Q', 'M', 'T'].includes(move.capturedPiece.type)) {
+      score += this.pieceValues[move.capturedPiece.type] * 0.5;
+    }
+    
+    // 3. 双重攻击奖励
+    const tempBoard = this.makeMoveAndSwitchTurn(board, move);
+    const nextMoves = this.getLegalMovesOptimized(tempBoard);
+    const nextCaptures = nextMoves.filter(m => m.capturedPiece);
+    if (nextCaptures.length > 0) {
+      // 如果下一步还能吃子，给予奖励
+      const maxCaptureValue = Math.max(...nextCaptures.map(m => this.pieceValues[m.capturedPiece.type] || 0));
+      score += maxCaptureValue * 0.3;
+    }
+    
+    // 4. 全局局势评估
+    const globalEvaluation = this.evaluateGlobalPosition(tempBoard, move);
+    score += globalEvaluation;
+    
+    return score;
+  }
 
-    for (let r = 0; r < H; r++) {
-      for (let c = 0; c < W; c++) {
+  /**
+   * 全局局势评估函数
+   * 评估包括：物质优势、中心控制、活动性、兵线结构、王的安全、威胁/被威胁、子力出动程度、将军惩罚等
+   * @param {Object} board - 当前棋盘状态
+   * @param {Object} move - 当前移动
+   * @returns {number} - 评估分数
+   */
+  evaluateGlobalPosition(board, move) {
+    let score = 0;
+    const aiColor = this.aiColor;
+    const opponentColor = aiColor === 'W' ? 'B' : 'W';
+    
+    // 1. 物质优势评估
+    const materialScore = this.evaluateMaterialAdvantage(board, aiColor, opponentColor);
+    score += materialScore * 0.5; // 物质优势权重为0.5
+    
+    // 2. 中心控制评估
+    const centerControlScore = this.evaluateCenterControl(board, aiColor, opponentColor);
+    score += centerControlScore * 0.3; // 中心控制权重为0.3
+    
+    // 3. 活动性评估（可移动的合法着法数量）
+    const mobilityScore = this.evaluateMobility(board, aiColor, opponentColor);
+    score += mobilityScore * 0.2; // 活动性权重为0.2
+    
+    // 4. 兵线结构评估
+    const pawnStructureScore = this.evaluatePawnStructure(board, aiColor, opponentColor);
+    score += pawnStructureScore * 0.2; // 兵线结构权重为0.2
+    
+    // 5. 王的安全评估
+    const kingSafetyScore = this.evaluateKingSafety(board, aiColor, opponentColor);
+    score += kingSafetyScore * 0.4; // 王的安全权重为0.4
+    
+    // 6. 威胁/被威胁评估
+    const threatScore = this.evaluateThreats(board, aiColor, opponentColor);
+    score += threatScore * 0.3; // 威胁评估权重为0.3
+    
+    // 7. 子力出动程度评估
+    const pieceDevelopmentScore = this.evaluatePieceDevelopment(board, aiColor, opponentColor);
+    score += pieceDevelopmentScore * 0.2; // 子力出动权重为0.2
+    
+    // 8. 将军惩罚（避免被将军）
+    const checkPenalty = this.evaluateChecks(board, aiColor, opponentColor);
+    score += checkPenalty * 0.5; // 将军惩罚权重为0.5
+    
+    return score;
+  }
+
+  /**
+   * 评估物质优势
+   * @param {Object} board - 棋盘状态
+   * @param {string} aiColor - AI颜色
+   * @param {string} opponentColor - 对手颜色
+   * @returns {number} - 物质优势分数
+   */
+  evaluateMaterialAdvantage(board, aiColor, opponentColor) {
+    let aiMaterial = 0;
+    let opponentMaterial = 0;
+    
+    // 遍历棋盘计算双方物质总值
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
         const piece = board.board[r][c];
-        if (!piece) {
-          continue;
-        }
-
-        const pieceType = piece.type || '';
-        const pieceColor = piece.color || '';
-
-        const typeIndex = pieceTypes.indexOf(pieceType);
-        if (typeIndex === -1) {
-          continue;
-        }
-
-        let channel;
-        if (pieceColor === 'W') {
-          channel = typeIndex % numChannels;
-        } else {
-          channel = (typeIndex + pieceTypes.length) % numChannels;
-        }
-
-        if (channel >= 0 && channel < C) {
-          // NCHW 下索引：[channel, r, c]
-          const idx = channel * (H * W) + r * W + c;
-          data[idx] = 1.0;
+        if (piece) {
+          const value = this.pieceValues[piece.type] || 0;
+          if (piece.color === aiColor) {
+            aiMaterial += value;
+          } else if (piece.color === opponentColor) {
+            opponentMaterial += value;
+          }
         }
       }
     }
-
-    const inputTensor = tf.tensor4d(data, [1, C, H, W]);
-    return inputTensor;
+    
+    // 返回物质优势差值
+    return aiMaterial - opponentMaterial;
   }
 
-  // --- 辅助方法 (从 MCTS 版本保留) ---
+  /**
+   * 评估中心控制
+   * @param {Object} board - 棋盘状态
+   * @param {string} aiColor - AI颜色
+   * @param {string} opponentColor - 对手颜色
+   * @returns {number} - 中心控制分数
+   */
+  evaluateCenterControl(board, aiColor, opponentColor) {
+    let aiCenterControl = 0;
+    let opponentCenterControl = 0;
+    
+    // 遍历棋盘评估中心控制
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
+        const pos = this.rules.toPos(r, c);
+        const weight = this.centerControlWeights[pos] || 0;
+        
+        if (weight > 0) {
+          // 检查这个位置是否被某一方控制（有合法移动可以到达）
+          const aiControls = this.positionControlledBy(board, pos, aiColor);
+          const opponentControls = this.positionControlledBy(board, pos, opponentColor);
+          
+          if (aiControls) aiCenterControl += weight;
+          if (opponentControls) opponentCenterControl += weight;
+        }
+      }
+    }
+    
+    return aiCenterControl - opponentCenterControl;
+  }
+
+  /**
+   * 检查某个位置是否被指定颜色控制
+   * @param {Object} board - 棋盘状态
+   * @param {string} pos - 位置
+   * @param {string} color - 颜色
+   * @returns {boolean} - 是否被控制
+   */
+  positionControlledBy(board, pos, color) {
+    // 遍历棋盘上该颜色的所有棋子
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
+        const piece = board.board[r][c];
+        if (piece && piece.color === color) {
+          const fromPos = this.rules.toPos(r, c);
+          // 检查是否有合法移动可以到达目标位置
+          if (this.rules.isValidMove(board, fromPos, pos, color)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 评估活动性（合法着法数量）
+   * @param {Object} board - 棋盘状态
+   * @param {string} aiColor - AI颜色
+   * @param {string} opponentColor - 对手颜色
+   * @returns {number} - 活动性分数
+   */
+  evaluateMobility(board, aiColor, opponentColor) {
+    const aiMoves = this.getAllLegalMovesForColor(board, aiColor);
+    const opponentMoves = this.getAllLegalMovesForColor(board, opponentColor);
+    
+    // 返回合法着法数量差值
+    return aiMoves.length - opponentMoves.length;
+  }
+
+  /**
+   * 评估兵线结构
+   * @param {Object} board - 棋盘状态
+   * @param {string} aiColor - AI颜色
+   * @param {string} opponentColor - 对手颜色
+   * @returns {number} - 兵线结构分数
+   */
+  evaluatePawnStructure(board, aiColor, opponentColor) {
+    let aiPawnScore = 0;
+    let opponentPawnScore = 0;
+    
+    // 评估兵的结构（孤立兵、落后兵等）
+    aiPawnScore += this.analyzePawnStructure(board, aiColor);
+    opponentPawnScore += this.analyzePawnStructure(board, opponentColor);
+    
+    return aiPawnScore - opponentPawnScore;
+  }
+
+  /**
+   * 分析兵的结构
+   * @param {Object} board - 棋盘状态
+   * @param {string} color - 颜色
+   * @returns {number} - 兵结构分数
+   */
+  analyzePawnStructure(board, color) {
+    let score = 0;
+    const pawns = [];
+    
+    // 收集所有兵的位置
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
+        const piece = board.board[r][c];
+        if (piece && piece.color === color && (piece.type === 'P' || piece.type === 'SP')) {
+          pawns.push({r, c});
+        }
+      }
+    }
+    
+    // 简单评估：兵的数量（越多越好）和兵的前进程度（越靠前越好）
+    for (const pawn of pawns) {
+      // 基础分数
+      score += 10;
+      
+      // 根据兵的位置加分（越接近对方底线分数越高）
+      if (color === 'W') {
+        score += pawn.r; // 白方兵越往下分数越高
+      } else {
+        score += (9 - pawn.r); // 黑方兵越往上分数越高
+      }
+    }
+    
+    return score;
+  }
+
+  /**
+   * 评估王的安全
+   * @param {Object} board - 棋盘状态
+   * @param {string} aiColor - AI颜色
+   * @param {string} opponentColor - 对手颜色
+   * @returns {number} - 王的安全分数
+   */
+  evaluateKingSafety(board, aiColor, opponentColor) {
+    let score = 0;
+    
+    // 查找双方王的位置
+    const aiKingPos = board.state.kingPos[aiColor];
+    const opponentKingPos = board.state.kingPos[opponentColor];
+    
+    // 王周围保护子力加分，受攻击子力减分
+    if (aiKingPos) {
+      const aiKingSafety = this.evaluateKingProtection(board, aiKingPos, aiColor);
+      score += aiKingSafety;
+    }
+    
+    if (opponentKingPos) {
+      const opponentKingSafety = this.evaluateKingProtection(board, opponentKingPos, opponentColor);
+      score -= opponentKingSafety; // 对方王越安全，我们得分越少
+    }
+    
+    return score;
+  }
+
+  /**
+   * 评估王周围的保护
+   * @param {Object} board - 棋盘状态
+   * @param {string} kingPos - 王的位置
+   * @param {string} kingColor - 王的颜色
+   * @returns {number} - 保护分数
+   */
+  evaluateKingProtection(board, kingPos, kingColor) {
+    let protectionScore = 0;
+    const kingRC = this.rules.toRC(kingPos);
+    
+    // 检查王周围8个方向的格子
+    const directions = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1],           [0, 1],
+      [1, -1],  [1, 0],  [1, 1]
+    ];
+    
+    for (const [dr, dc] of directions) {
+      const r = kingRC.r + dr;
+      const c = kingRC.c + dc;
+      
+      // 检查是否在棋盘内
+      if (r >= 0 && r < 10 && c >= 0 && c < 10) {
+        const pos = this.rules.toPos(r, c);
+        const piece = board.board[r][c];
+        
+        // 如果是己方棋子，提供保护
+        if (piece && piece.color === kingColor) {
+          protectionScore += 5; // 每个保护子力加5分
+        }
+        
+        // 如果是对方棋子，可能存在威胁
+        if (piece && piece.color !== kingColor) {
+          protectionScore -= 3; // 每个威胁子力减3分
+        }
+      }
+    }
+    
+    return protectionScore;
+  }
+
+  /**
+   * 评估威胁
+   * @param {Object} board - 棋盘状态
+   * @param {string} aiColor - AI颜色
+   * @param {string} opponentColor - 对手颜色
+   * @returns {number} - 威胁分数
+   */
+  evaluateThreats(board, aiColor, opponentColor) {
+    let aiThreats = 0;
+    let opponentThreats = 0;
+    
+    // 计算双方的威胁
+    const aiMoves = this.getAllLegalMovesForColor(board, aiColor);
+    const opponentMoves = this.getAllLegalMovesForColor(board, opponentColor);
+    
+    // 统计能吃子的着法
+    aiThreats += aiMoves.filter(move => move.capturedPiece).length;
+    opponentThreats += opponentMoves.filter(move => move.capturedPiece).length;
+    
+    return (aiThreats - opponentThreats) * 5; // 每个威胁乘以5
+  }
+
+  /**
+   * 评估子力出动程度
+   * @param {Object} board - 棋盘状态
+   * @param {string} aiColor - AI颜色
+   * @param {string} opponentColor - 对手颜色
+   * @returns {number} - 子力出动分数
+   */
+  evaluatePieceDevelopment(board, aiColor, opponentColor) {
+    let aiDevelopment = 0;
+    let opponentDevelopment = 0;
+    
+    // 评估子力出动（初始位置的子力移动加分）
+    aiDevelopment += this.calculatePieceDevelopment(board, aiColor);
+    opponentDevelopment += this.calculatePieceDevelopment(board, opponentColor);
+    
+    return aiDevelopment - opponentDevelopment;
+  }
+
+  /**
+   * 计算子力出动程度
+   * @param {Object} board - 棋盘状态
+   * @param {string} color - 颜色
+   * @returns {number} - 出动分数
+   */
+  calculatePieceDevelopment(board, color) {
+    let score = 0;
+    
+    // 对于每个己方棋子，如果不在初始位置，则加分
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
+        const piece = board.board[r][c];
+        if (piece && piece.color === color) {
+          // 简单评估：所有子力只要不在初始行就加分
+          if (color === 'W' && r > 0) {
+            score += 2; // 白方只要不在第1行就加分
+          } else if (color === 'B' && r < 9) {
+            score += 2; // 黑方只要不在第10行就加分
+          }
+        }
+      }
+    }
+    
+    return score;
+  }
+
+  /**
+   * 评估将军状态（避免被将军）
+   * @param {Object} board - 棋盘状态
+   * @param {string} aiColor - AI颜色
+   * @param {string} opponentColor - 对手颜色
+   * @returns {number} - 将军惩罚分数
+   */
+  evaluateChecks(board, aiColor, opponentColor) {
+    let score = 0;
+    
+    // 如果AI被将军，要惩罚
+    if (this.rules.isCheck(board, aiColor)) {
+      score -= 50;
+    }
+    
+    // 如果AI能将军对方，要奖励
+    if (this.rules.isCheck(board, opponentColor)) {
+      score += 30;
+    }
+    
+    return score;
+  }
+
+  /**
+   * 获取指定颜色的所有合法移动
+   * @param {Object} board - 棋盘状态
+   * @param {string} color - 颜色
+   * @returns {Array} - 合法移动列表
+   */
+  getAllLegalMovesForColor(board, color) {
+    const moves = [];
+    const size = board.board.length;
+    
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const piece = board.board[r][c];
+        if (piece && piece.color === color) {
+          const fromPos = this.rules.toPos(r, c);
+          
+          for (let tr = 0; tr < size; tr++) {
+            for (let tc = 0; tc < size; tc++) {
+              const toPos = this.rules.toPos(tr, tc);
+              
+              if (this.rules.isValidMove(board, fromPos, toPos, color)) {
+                moves.push({
+                  from: fromPos,
+                  to: toPos,
+                  piece: piece,
+                  capturedPiece: board.board[tr][tc],
+                  isCapture: !!board.board[tr][tc]
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+    return moves;
+  }
+
+  // --- 辅助方法 ---
   
   /**
    * 优化后的合法移动生成 (依赖 Rules.js)
