@@ -1,6 +1,6 @@
 .container {
   padding: 40rpx;
-  padding-top: 500rpx;
+  padding-top: 100rpx;
 }
 
 .section-title {
@@ -24,4 +24,10 @@
 .save-btn {
   width: 90%;
   margin-top: 80rpx;
+}
+
+.sample-sound-btn {
+  margin-top: 20rpx;
+  margin-bottom: 40rpx;
+  font-size: 28rpx;
 }

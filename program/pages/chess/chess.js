@@ -34,6 +34,9 @@ Page({
       });
     }
     
+    // 从设置中读取音效设置并初始化音频上下文
+    this.initAudioContext(settings);
+    
     // 解析游戏模式
     const mode = options.mode || 'pvp';
     this.setData({
@@ -72,6 +75,57 @@ Page({
     
     // 如果第一个玩家是AI，触发AI移动
     this.makeAIMoveIfNecessary();
+  },
+
+  // 初始化音频上下文
+  initAudioContext(settings) {
+    // 音效类型映射
+    const soundTypes = [
+      { label: "原木 Wooden", value: "wooden", file: "/program/assets(sucaiku)/sounds/wooden_move.mp3" },
+      { label: "玻璃 Glass", value: "glass", file: "/program/assets(sucaiku)/sounds/glass_move.mp3" },
+      { label: "喵 Meow", value: "meow", file: "/program/assets(sucaiku)/sounds/cat_meow.mp3" }
+    ];
+    
+    // 销毁旧的音频上下文（如果有）
+    if (this.audioCtx) {
+      this.audioCtx.destroy();
+    }
+    
+    // 创建新的音频上下文
+    this.audioCtx = wx.createInnerAudioContext();
+    
+    // 获取音效设置
+    const soundType = (settings && settings.soundType) || "wooden";
+    const volume = (settings && settings.volume) || 70;
+    
+    // 设置当前音效文件
+    const currentSound = soundTypes.find(sound => sound.value === soundType);
+    if (currentSound) {
+      this.audioCtx.src = currentSound.file;
+    }
+    
+    // 设置音量
+    this.audioCtx.volume = volume / 100;
+  },
+
+  // 播放走棋音效
+  playMoveSound() {
+    if (this.audioCtx) {
+      // 重新设置音量（以防用户在游戏过程中更改了设置）
+      const settings = wx.getStorageSync('settings');
+      if (settings && settings.volume !== undefined) {
+        this.audioCtx.volume = settings.volume / 100;
+      }
+      
+      this.audioCtx.play();
+    }
+  },
+
+  onUnload() {
+    // 页面卸载时销毁音频上下文
+    if (this.audioCtx) {
+      this.audioCtx.destroy();
+    }
   },
 
   /* -----------------------------------------
@@ -162,6 +216,9 @@ Page({
     // 执行移动
     this.board.movePiece(from, to);
 
+    // 播放走棋音效
+    this.playMoveSound();
+
     // 记录操作快照
     this.recorder.recordMove(snapshot);
 
@@ -226,6 +283,9 @@ Page({
     // 修改目标位置的棋子为升变后的棋子
     const { r: toR, c: toC } = this.board.toRC(to);
     this.board.board[toR][toC] = { type: promotedType, color: piece.color };
+
+    // 播放走棋音效
+    this.playMoveSound();
 
     // 记录操作快照
     this.recorder.recordMove(snapshot);
@@ -303,6 +363,9 @@ Page({
 
     // 执行移动
     this.board.movePiece(from, to);
+
+    // 播放走棋音效
+    this.playMoveSound();
 
     // 记录操作快照
     this.recorder.recordMove(snapshot);
@@ -388,6 +451,9 @@ Page({
         // 修改目标位置的棋子为升变后的棋子
         const { r: toR, c: toC } = this.board.toRC(to);
         this.board.board[toR][toC] = { type: promotedType, color: piece.color };
+
+        // 播放走棋音效
+        this.playMoveSound();
 
         // 记录操作快照
         this.recorder.recordMove(snapshot);
