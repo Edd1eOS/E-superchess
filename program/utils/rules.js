@@ -20,34 +20,64 @@ class Rules {
   }
 
   /**
-   * 检查是否处于将军状态
+   * 检查是否处于将军状态（增强版）
    * @param {Object} board - 棋盘对象
    * @param {String} kingColor - 被将军的王的颜色 ("W" 或 "B")
    * @returns {Boolean} 是否被将军
    */
   isCheck(board, kingColor) {
-    // 获取王的位置
-    const kingPos = board.state.kingPos[kingColor];
-    if (!kingPos) return false;
-
-    // 获取对方颜色
-    const opponentColor = kingColor === 'W' ? 'B' : 'W';
-
-    // 遍历整个棋盘，查找对方所有棋子
-    for (let r = 0; r < 10; r++) {
-      for (let c = 0; c < 10; c++) {
-        const piece = board.board[r][c];
-        if (piece && piece.color === opponentColor) {
-          // 检查这个棋子是否能攻击到王的位置
-          const from = this.toPos(r, c);
-          if (this.isValidMove(board, from, kingPos, opponentColor)) {
-            return true;
-          }
-        }
-      }
+    // 严格验证输入参数
+    if (!board || !board.state || !board.board) {
+      console.warn('Invalid board object');
+      return false;
     }
 
-    return false;
+    if (!kingColor || (kingColor !== 'W' && kingColor !== 'B')) {
+      console.warn('Invalid king color:', kingColor);
+      return false;
+    }
+
+    // 验证游戏状态
+    if (!board.state.turn || !board.state.kingPos) {
+      console.warn('Invalid board state');
+      return false;
+    }
+
+    // 获取王的位置
+    const kingPos = board.state.kingPos[kingColor];
+    if (!kingPos) {
+      console.warn(`King position not found for color: ${kingColor}`);
+      return false;
+    }
+
+    // 验证王位置格式
+    if (typeof kingPos !== 'string' || kingPos.length < 2) {
+      console.warn('Invalid king position format:', kingPos);
+      return false;
+    }
+
+    // 解析王的位置
+    const kingRC = this.toRC(kingPos);
+    if (kingRC.r < 0 || kingRC.r >= 10 || kingRC.c < 0 || kingRC.c >= 10) {
+      console.warn('King position out of bounds:', kingPos);
+      return false;
+    }
+
+    // 确认王位置确实有王
+    const pieceAtPos = board.board[kingRC.r][kingRC.c];
+    if (!pieceAtPos) {
+      console.warn('No piece at king position:', kingPos);
+      return false;
+    }
+
+    const parsedPiece = this.parsePiece(pieceAtPos);
+    if (!parsedPiece || parsedPiece.type !== 'K' || parsedPiece.color !== kingColor) {
+      console.warn('Piece at king position is not the correct king:', pieceAtPos);
+      return false;
+    }
+
+    // 检查王的位置是否受到对方攻击
+    return this.isPositionUnderAttack(board, kingPos, kingColor);
   }
 
   /**
@@ -62,31 +92,123 @@ class Rules {
       return false;
     }
 
-    // 检查所有己方棋子的所有可能移动，看是否能解除将军状态
+    // 检查王是否能移动到安全位置
+    const kingPos = board.state.kingPos[kingColor];
+    const kingRC = this.toRC(kingPos);
+    
+    // 检查王周围的8个位置以及可能的特殊移动（如王车易位）
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue; // 不检查当前位置
+        
+        const tr = kingRC.r + dr;
+        const tc = kingRC.c + dc;
+        
+        // 检查目标位置是否在棋盘内
+        if (tr >= 0 && tr < 10 && tc >= 0 && tc < 10) {
+          const to = this.toPos(tr, tc);
+          
+          // 检查移动是否合法且不会导致被将军
+          if (this.isValidMove(board, kingPos, to, kingColor)) {
+            return false; // 王可以移动到安全位置，不是将杀
+          }
+        }
+      }
+    }
+    
+    // 检查王车易位是否可行（作为逃避将军的一种方式）
+    // 短易位
+    const shortCastlePos = this.toPos(kingRC.r, kingColor === 'W' ? 8 : 8); // i列
+    if (this.isValidCastlingMove(board, kingPos, shortCastlePos)) {
+      // 验证易位后是否仍然被将军
+      const testBoard = this.cloneBoard(board);
+      this.executeMove(testBoard, kingPos, shortCastlePos);
+      if (!this.isCheck(testBoard, kingColor)) {
+        return false; // 可以通过短易位脱离将军，不是将杀
+      }
+    }
+    
+    // 长易位
+    const longCastlePos = this.toPos(kingRC.r, 2); // c列
+    if (this.isValidCastlingMove(board, kingPos, longCastlePos)) {
+      // 验证易位后是否仍然被将军
+      const testBoard = this.cloneBoard(board);
+      this.executeMove(testBoard, kingPos, longCastlePos);
+      if (!this.isCheck(testBoard, kingColor)) {
+        return false; // 可以通过长易位脱离将军，不是将杀
+      }
+    }
+
+    // 检查能否通过其他棋子移动来解除将军状态
+    // 收集所有攻击王的敌人位置
+    const attackers = [];
+    const opponentColor = kingColor === 'W' ? 'B' : 'W';
+    
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
+        const piece = board.board[r][c];
+        if (piece && piece.color === opponentColor) {
+          const from = this.toPos(r, c);
+          if (this.isValidMove(board, from, kingPos, opponentColor)) {
+            attackers.push({pos: from, piece: piece});
+          }
+        }
+      }
+    }
+    
+    // 如果有多个敌人攻击王，则只能通过移动王来逃脱（前面已检查）
+    if (attackers.length > 1) {
+      return true; // 被多个敌人攻击，无法通过吃子或挡子解除，是将杀
+    }
+    
+    // 只有一个敌人攻击王的情况
+    const attacker = attackers[0];
+    if (!attacker) return true; // 没有找到攻击者但却被将军，这种情况应视为将杀
+    
+    // 检查能否吃掉攻击者
     for (let r = 0; r < 10; r++) {
       for (let c = 0; c < 10; c++) {
         const piece = board.board[r][c];
         if (piece && piece.color === kingColor) {
           const from = this.toPos(r, c);
-          
-          // 尝试所有可能的目标位置
-          for (let tr = 0; tr < 10; tr++) {
-            for (let tc = 0; tc < 10; tc++) {
-              const to = this.toPos(tr, tc);
-              
-              // 检查移动是否合法
-              if (this.isValidMove(board, from, to, kingColor)) {
-                // 创建一个临时棋盘来测试这个移动
-                const testBoard = this.cloneBoard(board);
-                
-                // 执行移动
-                this.executeMove(testBoard, from, to);
-                
-                // 检查移动后是否仍然被将军
-                if (!this.isCheck(testBoard, kingColor)) {
-                  // 如果能找到一个解除将军的移动，则不是将杀
-                  return false;
-                }
+          // 王不能吃掉攻击者的情况前面已经检查过了
+          if (from !== kingPos && this.isValidMove(board, from, attacker.pos, kingColor)) {
+            return false; // 可以吃掉攻击者，不是将杀
+          }
+        }
+      }
+    }
+    
+    // 检查能否在攻击者和王之间放置棋子阻挡攻击（仅对直线攻击有效）
+    const attackerRC = this.toRC(attacker.pos);
+    const attackVector = {
+      dr: attackerRC.r - kingRC.r,
+      dc: attackerRC.c - kingRC.c
+    };
+    
+    // 只有直线攻击（横向、纵向、对角线）才能被阻挡
+    if ((attackVector.dr === 0 || attackVector.dc === 0 || Math.abs(attackVector.dr) === Math.abs(attackVector.dc)) &&
+         (Math.abs(attackVector.dr) > 1 || Math.abs(attackVector.dc) > 1)) {
+      // 计算攻击路径上的所有位置
+      const steps = Math.max(Math.abs(attackVector.dr), Math.abs(attackVector.dc));
+      const stepDr = attackVector.dr / steps;
+      const stepDc = attackVector.dc / steps;
+      
+      // 检查除了攻击者位置以外的路径点
+      for (let i = 1; i < steps; i++) {
+        const blockR = kingRC.r + Math.round(stepDr * i);
+        const blockC = kingRC.c + Math.round(stepDc * i);
+        const blockPos = this.toPos(blockR, blockC);
+        
+        // 检查是否有己方棋子可以移动到阻挡点
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            const piece = board.board[r][c];
+            if (piece && piece.color === kingColor) {
+              const from = this.toPos(r, c);
+              // 王的移动已经在前面检查过了
+              if (from !== kingPos && this.isValidMove(board, from, blockPos, kingColor)) {
+                return false; // 可以阻挡攻击，不是将杀
               }
             }
           }
@@ -94,7 +216,7 @@ class Rules {
       }
     }
 
-    // 如果所有可能的移动都无法解除将军，则为将杀
+    // 如果所有可能的解将方法都无效，则为将杀
     return true;
   }
 
@@ -156,14 +278,14 @@ class Rules {
   }
 
   /**
-   * 检查移动是否合法
+   * 检查移动是否合法（基础版本，不检查移动后是否会被将军）
    * @param {Object} board - 棋盘对象
    * @param {String} from - 起始位置 (如 "a1")
    * @param {String} to - 目标位置 (如 "b2")
    * @param {String} turn - 当前行棋方 ("W" 或 "B")
    * @returns {Boolean} 是否合法
    */
-  isValidMove(board, from, to, turn) {
+  isValidMoveBasic(board, from, to, turn) {
     // 如果起点或终点无效
     if (!from || !to) return false;
 
@@ -183,58 +305,56 @@ class Rules {
     if (targetPiece && targetPiece.color === piece.color) return false;
 
     // 根据棋子类型判断移动是否合法
-    let basicValid = false;
     switch (piece.type) {
       case 'P':  // 兵 (Pawn)
-        basicValid = this.isValidPawnMove(board, from, to, piece);
-        break;
+        return this.isValidPawnMove(board, from, to, piece);
 
       case 'SP': // 长矛兵 (Spearman)
-        basicValid = this.isValidSpearmanMove(board, from, to, piece);
-        break;
+        return this.isValidSpearmanMove(board, from, to, piece);
 
       case 'N':  // 马 (Knight)
-        basicValid = this.isValidKnightMove(from, to);
-        break;
+        return this.isValidKnightMove(from, to);
 
       case 'B':  // 象 (Bishop)
-        basicValid = this.isValidBishopMove(board, from, to);
-        break;
+        return this.isValidBishopMove(board, from, to);
 
       case 'R':  // 车 (Rook)
-        basicValid = this.isValidRookMove(board, from, to);
-        break;
+        return this.isValidRookMove(board, from, to);
 
       case 'Q':  // 后 (Queen)
-        basicValid = this.isValidQueenMove(board, from, to);
-        break;
+        return this.isValidQueenMove(board, from, to);
 
       case 'K':  // 王 (King)
-        basicValid = this.isValidKingMove(board, from, to);
-        break;
+        return this.isValidKingMove(board, from, to);
 
       case 'T':  // 圣殿骑士 (Templar)
-        basicValid = this.isValidTemplarMove(board, from, to, piece);
-        break;
+        return this.isValidTemplarMove(board, from, to, piece);
 
       case 'M':  // 元帅 (Marshall)
-        basicValid = this.isValidMarshallMove(board, from, to, piece);
-        break;
+        return this.isValidMarshallMove(board, from, to, piece);
 
       case 'A':  // 刺客 (Assassin)
-        basicValid = this.isValidAssassinMove(from, to);
-        break;
+        return this.isValidAssassinMove(from, to);
 
       case 'LG': // 弩兵 (Lineguard)
-        basicValid = this.isValidLineguardMove(from, to);
-        break;
+        return this.isValidLineguardMove(from, to);
 
       default:
         return false;
     }
+  }
 
-    // 如果基本移动不合法，则直接返回false
-    if (!basicValid) {
+  /**
+   * 检查移动是否合法
+   * @param {Object} board - 棋盘对象
+   * @param {String} from - 起始位置 (如 "a1")
+   * @param {String} to - 目标位置 (如 "b2")
+   * @param {String} turn - 当前行棋方 ("W" 或 "B")
+   * @returns {Boolean} 是否合法
+   */
+  isValidMove(board, from, to, turn) {
+    // 先检查基本移动是否合法
+    if (!this.isValidMoveBasic(board, from, to, turn)) {
       return false;
     }
 
@@ -655,8 +775,8 @@ class Rules {
         if (piece && piece.color === opponentColor) {
           // 检查这个棋子是否能攻击到指定位置
           const from = this.toPos(r, c);
-          // 注意：这里我们不需要考虑将军状态，否则会造成循环依赖
-          if (this.isValidMove(board, from, position, opponentColor)) {
+          // 注意：这里使用基础移动验证函数避免循环依赖
+          if (this.isValidMoveBasic(board, from, position, opponentColor)) {
             return true;
           }
         }
