@@ -5,7 +5,7 @@
   <text wx:if="{{reasonText}}" class="subtitle">{{ reasonText }}</text>
 
   <view class="buttons">
-    <button bindtap="goMenu">Back to Menu</button>
+    <button bindtap="goMenu">回到标题</button>
   </view>
 
 </view>
