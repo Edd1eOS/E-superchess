@@ -4,6 +4,7 @@
   <view class="board">
     <chessboard 
       boardState="{{boardState}}" 
+      boardTheme="{{boardTheme}}"
       bind:celltap="onCellTap"
       bind:move="onMove"
     />

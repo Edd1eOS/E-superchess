@@ -1,5 +1,5 @@
 <!-- 棋盘组件 -->
-<view class="chessboard">
+<view class="chessboard {{boardTheme}}">
   <block wx:for="{{grid}}" wx:for-index="y" wx:key="y">
     <view class="row">
       <block wx:for="{{item}}" wx:for-index="x" wx:key="x">
