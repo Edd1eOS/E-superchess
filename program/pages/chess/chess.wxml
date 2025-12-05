@@ -12,10 +12,10 @@
 
   <!-- 操作区 -->
   <view class="op-panel">
-    <button bindtap="onUndo">Undo</button>
-    <button bindtap="onOfferDraw">Offer Draw</button>
-    <button bindtap="onSurrender">Surrender</button>
-    <button bindtap="backToMenu">Back to Menu</button>
+    <button bindtap="onUndo">悔棋</button>
+    <button bindtap="onOfferDraw">和棋</button>
+    <button bindtap="onSurrender">认输</button>
+    <button bindtap="backToMenu">回到标题</button>
   </view>
 
 </view>

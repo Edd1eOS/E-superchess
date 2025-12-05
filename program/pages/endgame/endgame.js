@@ -3,7 +3,7 @@ const Recorder = require('../../utils/recorder.js');
 
 Page({
   data: {
-    resultText: "Game Over",
+    resultText: "游戏结束",
     reasonText: ""
   },
 
@@ -30,23 +30,23 @@ Page({
     }
 
     const resultMap = {
-      "1-0": "White wins (1-0)",
-      "0-1": "Black wins (0-1)",
-      "0.5-0.5": "Draw (0.5-0.5)"
+      "1-0": "白方获胜 (1-0)",
+      "0-1": "黑方获胜 (0-1)",
+      "0.5-0.5": "和棋 (0.5-0.5)"
     };
 
     const reasonMap = {
-      "checkmate": "Checkmate",
-      "resign": "Resignation",
-      "timeout": "Timeout",
-      "agreement": "Draw by agreement",
-      "stall": "Stalemate",
-      "illegal": "Illegal move (penalty)",
+      "checkmate": "完成将杀",
+      "resign": "认输",
+      "timeout": "超时",
+      "agreement": "协议和棋",
+      "stall": "逼和",
+      "illegal": "违规移动(处罚)",
       "unknown": ""
     };
 
     this.setData({
-      resultText: resultMap[displayScore] || "Game Over",
+      resultText: resultMap[displayScore] || "游戏结束",
       reasonText: reasonMap[reason] || (reason ? reason : "")
     });
   },
