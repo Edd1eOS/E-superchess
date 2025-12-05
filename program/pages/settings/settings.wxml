@@ -17,6 +17,24 @@
     bindchange="onVolumeChange"
   />
 
+  <text class="section-title">音效设置 Sound Settings</text>
+  <radio-group bindchange="onSoundTypeChange">
+    <label class="radio-item">
+      <radio value="wooden" checked="{{soundType === 'wooden'}}"/>
+      <text>原木 Wooden</text>
+    </label>
+    <label class="radio-item">
+      <radio value="glass" checked="{{soundType === 'glass'}}"/>
+      <text>玻璃 Glass</text>
+    </label>
+    <label class="radio-item">
+      <radio value="meow" checked="{{soundType === 'meow'}}"/>
+      <text>喵 Meow</text>
+    </label>
+  </radio-group>
+
+  <button size="mini" bindtap="playSampleSound">试听走棋音效 Play Sample Move Sound</button>
+
   <button class="save-btn" bindtap="saveSettings">保存设置 Save</button>
 
 </view>
