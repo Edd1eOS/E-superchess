@@ -1,6 +1,6 @@
 <view class="container">
 
-  <view class="title">国际象棋Pro</view>
+  <view class="title">E棋Pro</view>
 
   <view class="menu-buttons">
     <button bindtap="goPVP">本地对战</button>
