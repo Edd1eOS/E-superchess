@@ -5,7 +5,8 @@
   <image 
     wx:if="{{type}}" 
     class="piece-icon" 
-    src="/program/assets(sucaiku)/pieces_icon/{{color}}_{{type}}.png" 
+    src="/program/assets(sucaiku)/pieces_icon/{{color}}_{{type}}.jpg" 
+    binderror="onImageError"
     mode="aspectFit"
   />
 </view>
