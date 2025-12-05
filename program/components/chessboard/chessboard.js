@@ -3,6 +3,10 @@ Component({
     boardState: {
       type: Array,
       value: []
+    },
+    boardTheme: {
+      type: String,
+      value: 'wood'
     }
   },
 
@@ -29,7 +33,8 @@ Component({
       this.updateGrid();
     },
     'selectedCoord': function () { this.updateGrid(); },
-    'targetCoords': function () { this.updateGrid(); }
+    'targetCoords': function () { this.updateGrid(); },
+    'boardTheme': function () { this.updateGrid(); }
   },
 
   methods: {

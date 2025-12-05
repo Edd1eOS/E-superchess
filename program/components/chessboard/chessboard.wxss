@@ -6,6 +6,48 @@
   background-color: #f0d9b5; /* 设置背景色 */
 }
 
+/* 默认木质主题 */
+.wood {
+  background-color: #f0d9b5;
+}
+
+.wood .cell {
+  background-color: #f0d9b5; /* 浅色格子 */
+}
+
+.wood .cell.dark {
+  background-color: #b58863;
+  background: #b58863;
+}
+
+/* 天空幻境主题 */
+.light-blue {
+  background-color: #b0d9f0;
+}
+
+.light-blue .cell {
+  background-color: #d0e9f0; /* 浅蓝格子 */
+}
+
+.light-blue .cell.dark {
+  background-color: #a0c0d0;
+  background: #a0c0d0;
+}
+
+/* 玫瑰金主题 */
+.golden {
+  background-color: #f0d0d0;
+}
+
+.golden .cell {
+  background-color: #f0e0d0; /* 浅金色格子 */
+}
+
+.golden .cell.dark {
+  background-color: #d0b8b8;
+  background: #d0b8b8;
+}
+
 /* 棋盘行 */
 .row {
   display: flex;
@@ -149,5 +191,4 @@
 /* 保持悬停微交互但不盖过高亮效果 */
 .cell:hover {
   transform: translateY(-2rpx);
-  transition: transform 80ms ease;
 }

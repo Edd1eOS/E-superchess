@@ -17,13 +17,22 @@ Page({
     aiLevels: {             // AI等级
       W: 1,
       B: 1
-    }
+    },
+    boardTheme: 'wood'      // 默认棋盘主题
   },
 
   onLoad(options) {
     this.board = new Board();
     this.rules = new Rules();
     this.recorder = new Recorder();
+    
+    // 从设置中读取棋盘主题
+    const settings = wx.getStorageSync('settings');
+    if (settings && settings.boardStyle) {
+      this.setData({
+        boardTheme: settings.boardStyle
+      });
+    }
     
     // 解析游戏模式
     const mode = options.mode || 'pvp';
@@ -72,7 +81,8 @@ Page({
     this.setData({
       boardState: this.board.exportForUI(),
       turn: this.board.state.turn,
-      drawOfferedBy: this.data.drawOfferedBy
+      drawOfferedBy: this.data.drawOfferedBy,
+      boardTheme: this.data.boardTheme
     });
   },
 

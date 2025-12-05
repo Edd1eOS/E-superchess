@@ -2,21 +2,14 @@ Page({
 
   data: {
     // 用户的当前选择
-    pieceStyle: "classic",
     boardStyle: "wood",
     volume: 70,
 
     // 可扩展的主题列表（未来更新时只需追加即可）
-    pieceStyles: [
-      { label: "Classic 经典", value: "classic" },
-      { label: "Modern 现代", value: "modern" },
-      { label: "Medieval 中世纪", value: "medieval" }
-    ],
-
     boardStyles: [
       { label: "Wood 木纹", value: "wood" },
-      { label: "Marble 大理石", value: "marble" },
-      { label: "Dark 暗色", value: "dark" }
+      { label: "天空幻境", value: "light-blue" },
+      { label: "玫瑰金", value: "golden" }
     ],
   },
 
@@ -25,7 +18,6 @@ Page({
     const settings = wx.getStorageSync('settings');
     if (settings) {
       this.setData({
-        pieceStyle: settings.pieceStyle,
         boardStyle: settings.boardStyle,
         volume: settings.volume
       });
@@ -35,10 +27,6 @@ Page({
   /* -------------------------------
    * 事件监听：用户修改选项
    * ------------------------------- */
-  onPieceStyleChange(e) {
-    this.setData({ pieceStyle: e.detail.value });
-  },
-
   onBoardStyleChange(e) {
     this.setData({ boardStyle: e.detail.value });
   },
@@ -52,7 +40,6 @@ Page({
    * ------------------------------- */
   saveSettings() {
     const settings = {
-      pieceStyle: this.data.pieceStyle,
       boardStyle: this.data.boardStyle,
       volume: this.data.volume
     };
